@@ -1,0 +1,62 @@
+# 0.computer identity Worker — anonymous passkey registration + auth.
+#
+# NOT deployed by `npm run deploy` (that's a stub, on purpose). Deploying to
+# the real domain is a separate, explicit, human-approved step — see
+# docs/reaching-zero.md and docs/product-model.md for why.
+
+name = "zero-identity"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+compatibility_flags = []  # deliberately no nodejs_compat — Workers-native only
+
+# Registered handles + their passkey public keys. One writer: this Worker.
+# Value shape: { handle, credentials: [...], created }
+[[kv_namespaces]]
+binding = "HANDLES"
+id = "REPLACE_WITH_REAL_KV_ID"  # `wrangler kv namespace create HANDLES`
+
+# Single-use WebAuthn challenges. A Durable Object, not KV: KV is eventually
+# consistent, so a delete-after-read isn't atomic globally — a replayed
+# challenge is a real vulnerability, not a theoretical one.
+[[durable_objects.bindings]]
+name = "CHALLENGES"
+class_name = "ChallengeStore"
+
+# Pending device-link codes (headless anchor machines linking without a
+# browser — see src/link-store.js). Short-lived by design (10 min TTL),
+# so no long-term consistency concerns; a Durable Object still beats KV
+# here because approve+poll must not race on the same pending code.
+[[durable_objects.bindings]]
+name = "LINKS"
+class_name = "LinkStore"
+
+# Atomic handle claiming — found necessary by test/stress.js (a plain KV
+# get-then-put let 2/50 concurrent requests both win the same handle).
+[[durable_objects.bindings]]
+name = "HANDLE_CLAIMS"
+class_name = "HandleRegistry"
+
+# Per-(route, client IP) token bucket in front of every unauthenticated,
+# DO-spawning route (see src/index.js RATE_LIMITS) — otherwise a script in
+# a loop can mint unlimited CHALLENGES/LINKS/HANDLE_CLAIMS DO instances and
+# KV writes for free. Bounded cardinality (real IPs x fixed route list),
+# unlike those per-request DOs.
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChallengeStore", "LinkStore", "HandleRegistry"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["RateLimiter"]
+
+# Set once, never committed: `wrangler secret put SESSION_SECRET`
+# (signs session tokens — see src/index.js issueSession/verifySession)
+
+# Real domain routing — commented out until the human decides to deploy.
+# [[routes]]
+# pattern = "0.computer/api/identity/*"
+# zone_name = "0.computer"

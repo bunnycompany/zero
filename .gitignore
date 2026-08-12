@@ -1,0 +1,37 @@
+# virtualenvs / caches
+.venv/
+__pycache__/
+*.pyc
+
+# build output
+packaging/build/
+packaging/dist/
+packaging/macos-app/
+gui/.build/
+
+# runtime state (the namespace contract itself is tracked via README + .gitkeep)
+namespace/*/current
+namespace/command/
+namespace/log/
+namespace/memory/
+namespace/schedule/
+.zero-backups/
+.zero.lock
+
+# eval outputs
+eval_results/runs/
+dataset_storage/
+
+# android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/keystore.properties
+android/*.keystore
+android/*.jks
+
+# identity Worker
+identity/node_modules/
+identity/.wrangler/
+.dev.vars

@@ -1,0 +1,310 @@
+<title>Zero — north star</title>
+<style>
+  :root {
+    --paper: #FBFAF8;
+    --card: #FFFFFF;
+    --ink: #16161A;
+    --graphite: #5A5A63;
+    --rule: #E2DFD8;
+    --amber: #A9741A;
+    --moss: #47725A;
+    --clay: #9E3B2E;
+    --slate: #8C8C95;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+    --step--1: clamp(.76rem, .74rem + .1vw, .82rem);
+    --step-0: clamp(1rem, .97rem + .15vw, 1.06rem);
+    --step-1: clamp(1.2rem, 1.1rem + .4vw, 1.4rem);
+    --step-2: clamp(1.6rem, 1.4rem + .9vw, 2.1rem);
+    --step-3: clamp(2.1rem, 1.7rem + 1.9vw, 3.2rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14141A; --card: #1C1C23; --ink: #EDEBE6; --graphite: #A6A4AC;
+      --rule: #32323C; --slate: #7C7C87;
+      --amber: #D9A24B; --moss: #7BA98A; --clay: #D2705F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14141A; --card: #1C1C23; --ink: #EDEBE6; --graphite: #A6A4AC;
+    --rule: #32323C; --amber: #D9A24B; --moss: #7BA98A; --clay: #D2705F;
+    --slate: #7C7C87;
+  }
+  :root[data-theme="light"] {
+    --paper: #FBFAF8; --card: #FFFFFF; --ink: #16161A; --graphite: #5A5A63;
+    --rule: #E2DFD8; --amber: #A9741A; --moss: #47725A; --clay: #9E3B2E;
+    --slate: #8C8C95;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: var(--step-0); line-height: 1.6;
+    margin: 0; padding: 0 6vw 6rem;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 62rem; margin: 0 auto; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.15; margin: 0; }
+  h1 { font-family: var(--serif); font-size: var(--step-3); font-weight: 400; letter-spacing: -.01em; }
+  h2 { font-family: var(--serif); font-size: var(--step-2); font-weight: 400; }
+  h3 { font-size: var(--step-0); font-weight: 600; }
+  p { margin: 0; max-width: 62ch; }
+  a { color: inherit; }
+
+  header { padding: 5rem 0 3rem; border-bottom: 1px solid var(--rule); }
+  .eyebrow {
+    font-family: var(--mono); font-size: var(--step--1); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--slate);
+  }
+  .thesis {
+    font-family: var(--serif); font-size: var(--step-1); line-height: 1.45;
+    margin-top: 1.4rem; max-width: 46ch;
+  }
+  section { padding: 3.5rem 0; border-bottom: 1px solid var(--rule); display: grid; gap: 1.6rem; }
+  .lede { color: var(--graphite); max-width: 60ch; }
+
+  /* state lifecycle — the load-bearing concept, so it gets real structure */
+  .states { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+  .state {
+    display: grid; grid-template-columns: 1.2rem 8rem 1fr; gap: 1rem; align-items: baseline;
+    padding: .85rem 1.1rem; background: var(--card);
+    border-top: 1px solid var(--rule);
+  }
+  .state:first-child { border-top: 0; }
+  .dot { width: .6rem; height: .6rem; border-radius: 50%; align-self: center; }
+  .state code { font-family: var(--mono); font-size: var(--step--1); color: var(--graphite); }
+  .state b { font-weight: 600; }
+  .say { color: var(--graphite); }
+
+  /* device mockups */
+  .frames { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+  figure { margin: 0; display: grid; gap: .7rem; }
+  figcaption { font-family: var(--mono); font-size: var(--step--1); color: var(--slate); letter-spacing: .04em; }
+  .panel {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 1.1rem 1.2rem; display: grid; gap: .85rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px -18px rgba(0,0,0,.35);
+  }
+  .panel .row { display: flex; align-items: center; gap: .5rem; }
+  .panel .headline { font-weight: 500; font-size: var(--step--1); }
+  .hint { font-size: var(--step--1); color: var(--graphite); }
+  .thinking { font-size: var(--step--1); color: var(--slate); font-style: italic; }
+  .answer { font-family: var(--serif); font-size: var(--step-0); line-height: 1.5; }
+  .field {
+    border: 1px solid var(--rule); border-radius: 7px; padding: .5rem .65rem;
+    color: var(--slate); font-size: var(--step--1); background: transparent;
+  }
+  .you { font-size: var(--step--1); color: var(--graphite); }
+
+  /* terminal */
+  pre {
+    font-family: var(--mono); font-size: var(--step--1); line-height: 1.7;
+    background: var(--card); border: 1px solid var(--rule); border-radius: 6px;
+    padding: 1rem 1.1rem; overflow-x: auto; margin: 0;
+  }
+  pre b { color: var(--amber); font-weight: 600; }
+  pre .dim { color: var(--slate); }
+
+  .two { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 1.1rem 1.2rem; display: grid; gap: .5rem; }
+  .card .k { font-family: var(--mono); font-size: var(--step--1); color: var(--slate); letter-spacing: .06em; text-transform: uppercase; }
+  ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .45rem; max-width: 60ch; }
+  li::marker { color: var(--slate); }
+  .tag {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: .12rem .4rem; border-radius: 3px; border: 1px solid currentColor;
+  }
+  .done { color: var(--moss); }
+  .next { color: var(--amber); }
+  .gap  { color: var(--clay); }
+  footer { padding-top: 2.5rem; color: var(--slate); font-size: var(--step--1); }
+  .tabs { display: flex; gap: 1.4rem; border-top: 1px solid var(--rule); padding-top: .8rem; margin-top: .4rem; }
+  .tabs span { font-size: var(--step--1); color: var(--slate); }
+  .tabs span:first-child { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">0.computer · north star · july 2026</div>
+  <h1>Zero</h1>
+  <p class="thesis">A quiet assistant that lives on your Mac, speaks plainly, and never
+  makes you wonder whether it heard you.</p>
+</header>
+
+<section>
+  <h2>The rule we design to</h2>
+  <p class="lede">Every surface answers three questions without being asked:
+  <b>is it alive</b>, <b>did it hear me</b>, and <b>what did it do</b>. The previous
+  prototype failed on the third — users refused to read raw tool calls — and the
+  menubar failed on the first, showing a ready light for an agent that was never
+  running. Those two failures cost more trust than any missing feature.</p>
+</section>
+
+<section>
+  <h2>Six states, and what each one says out loud</h2>
+  <p class="lede">This is a lifecycle, so the order carries information: a person meets
+  these in sequence. Every surface — menubar, phone, terminal — renders the same six,
+  and never invents a seventh.</p>
+  <div class="states">
+    <div class="state"><span class="dot" style="background:var(--slate)"></span><code>asleep</code>
+      <span><b>Zero isn’t running</b> <span class="say">— and how to start it. Detected by a stale status file, so a dead agent can never look ready.</span></span></div>
+    <div class="state"><span class="dot" style="background:var(--amber)"></span><code>waking</code>
+      <span><b>Waking up…</b> <span class="say">— “Loading its brain. About a minute the first time.” Written before the model loads, not after.</span></span></div>
+    <div class="state"><span class="dot" style="background:var(--moss)"></span><code>idle</code>
+      <span><b>Ready</b> <span class="say">— idle means idle. It does not generate, watch, or speak unprompted.</span></span></div>
+    <div class="state"><span class="dot" style="background:var(--amber)"></span><code>thinking</code>
+      <span><b>Thinking…</b> <span class="say">— with a live tail of its reasoning, so a twenty-second wait looks like thought.</span></span></div>
+    <div class="state"><span class="dot" style="background:var(--amber)"></span><code>executing</code>
+      <span><b>Working on it…</b> <span class="say">— one action at a time, journaled before and after.</span></span></div>
+    <div class="state"><span class="dot" style="background:var(--clay)"></span><code>error</code>
+      <span><b>Something went wrong</b> <span class="say">— said in a sentence, with what to try next. Never a stack trace, never silence.</span></span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Mac — the menubar panel</h2>
+  <p class="lede">Small, calm, and honest. Real strings from the shipping build.</p>
+  <div class="frames">
+    <figure>
+      <div class="panel">
+        <div class="row"><span class="dot" style="background:var(--slate)"></span><span class="headline">Zero isn’t running</span></div>
+        <div class="hint">Start it from a terminal with <span style="font-family:var(--mono)">zero start</span></div>
+        <div class="field">Ask Zero anything</div>
+      </div>
+      <figcaption>asleep — the state that used to lie</figcaption>
+    </figure>
+    <figure>
+      <div class="panel">
+        <div class="row"><span class="dot" style="background:var(--amber)"></span><span class="headline">Thinking…</span></div>
+        <div class="you">You: save a note that the plants need water</div>
+        <div class="thinking">The user wants a note saved. I need to use the write_file…</div>
+        <div class="field">Ask Zero anything</div>
+      </div>
+      <figcaption>thinking — the wait made visible</figcaption>
+    </figure>
+    <figure>
+      <div class="panel">
+        <div class="row"><span class="dot" style="background:var(--moss)"></span><span class="headline">Ready</span></div>
+        <div class="you">You: save a note that the plants need water</div>
+        <div class="answer">I would have written that file — but I’m in shadow mode right
+        now, so I only wrote down what I would have done instead of actually doing it.</div>
+        <div class="field">Ask Zero anything</div>
+      </div>
+      <figcaption>ready — shadow mode explained without jargon</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2>Terminal — for the days you’re at the keyboard</h2>
+  <p class="lede">The command waits with you rather than telling you to go poll another one.</p>
+<pre><span class="dim">$</span> zero what files are in the scripts folder
+  thinking.......................
+  <b>zero ›</b> I have listed the contents of the scripts folder for you.
+
+<span class="dim">$</span> zero status
+Zero is awake — idle
+mode: shadow (nothing is executed for real)</pre>
+</section>
+
+<section>
+  <h2>Phone — the surface you’ll actually use</h2>
+  <p class="lede">Grayscale-first for the Daylight DC-1’s reflective panel: contrast comes
+  from fill and border, never hue. Adapts to the Pixel Fold’s two panels at the canonical
+  breakpoints — three panes unfolded, one plus a drawer folded.</p>
+  <div class="frames">
+    <figure>
+      <div class="panel" style="gap:.6rem">
+        <div class="row" style="justify-content:space-between">
+          <span class="headline">Zero</span><span class="hint" style="font-family:var(--mono)">auto</span>
+        </div>
+        <div class="you" style="text-align:right;background:var(--ink);color:var(--paper);padding:.45rem .7rem;border-radius:12px;justify-self:end;max-width:80%">
+          what did I say I’d do about the deck?</div>
+        <div class="answer" style="border:1px solid var(--rule);padding:.5rem .7rem;border-radius:12px;max-width:85%">
+          You said you’d send it to Mara before Friday. It’s Thursday.</div>
+        <div class="field">Message…</div>
+      </div>
+      <figcaption>phone — picking up where you left off</figcaption>
+    </figure>
+    <figure>
+      <div class="panel" style="gap:.6rem">
+        <div class="row" style="justify-content:space-between">
+          <span class="headline">Zero</span>
+          <span class="hint" style="color:var(--clay)">offline</span>
+        </div>
+        <div class="hint">Can’t reach your Mac right now. What you type will be waiting
+        for it when it wakes up.</div>
+        <div class="field">Message…</div>
+      </div>
+      <figcaption>offline — a promise, not an error</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2>What the first Zero got right</h2>
+  <p class="lede">Worth carrying forward: it had a <em>voice</em>, and an information
+  architecture that matched how a person thinks about their life rather than how the
+  software is built.</p>
+  <div class="two">
+    <div class="card">
+      <div class="k">its own words, 2026</div>
+      <p class="answer">“I’m here to help you navigate your digital world — whether that
+      means tackling complex projects, organizing your files, or just exploring what’s
+      possible.”</p>
+      <p class="hint">Warm, first-person, unhurried. The current Zero speaks in one plain
+      sentence per turn; this is the register to grow into.</p>
+    </div>
+    <div class="card">
+      <div class="k">its shape</div>
+      <div class="tabs"><span>Projects</span><span>Inbox</span><span>Camera</span><span>Tasks</span></div>
+      <p class="hint">Nouns from a person’s life, not a system’s. Today’s Zero has only a
+      chat box; these are the rooms it eventually needs — and the reason the answer channel
+      had to come first.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Where we are</h2>
+  <div class="two">
+    <div class="card">
+      <div class="k"><span class="tag done">done</span></div>
+      <ul>
+        <li>Speaks one plain sentence every turn — successes and failures alike</li>
+        <li>Liveness: a dead agent shows grey, never green</li>
+        <li>Reasoning streams while it thinks</li>
+        <li>Remembers across restarts, and says so</li>
+        <li><span style="font-family:var(--mono)">zero</span> command with a first-run greeting</li>
+        <li>Shadow mode by default; going live is a human’s hand only</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="k"><span class="tag next">next</span></div>
+      <ul>
+        <li>One <span style="font-family:var(--mono)">.app</span> — no terminal to install or start it</li>
+        <li>Cold-start progress outside the terminal</li>
+        <li>Approve-before-acting, so live mode is safe for family</li>
+        <li>A phone that talks to the agent, not just to models</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="k"><span class="tag gap">honest gaps</span></div>
+      <ul>
+        <li>It never speaks first — no proactivity at all yet</li>
+        <li>More literal than it should be: “my Downloads folder” beats a vague description</li>
+        <li>No reminders, calendar, or scheduled work — it will tell you so rather than pretend</li>
+        <li>The journal keeps everything you type, in plain text, forever</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Design tokens: paper &amp; ink neutrals, amber for work in progress — the DC-1’s own
+  night backlight. Serif for Zero’s voice, system sans for interface, mono for state
+  names and paths. Every string on this page is taken from the shipping build.
+</footer>
+</div>

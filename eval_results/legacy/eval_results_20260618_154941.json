@@ -1,0 +1,36 @@
+[
+  {
+    "task_id": "humaneval_0",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "I received: Write a function to compute the nth Fibonacci number.",
+    "success": false,
+    "execution_time": 9.5367431640625e-07,
+    "metrics": {
+      "accuracy": 0.4827586206896552,
+      "input_length": 95,
+      "output_length": 65
+    },
+    "dataset": "humaneval",
+    "split": "test",
+    "error": null
+  },
+  {
+    "task_id": "humaneval_1",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "I received: Write a function to compute the nth Fibonacci number.",
+    "success": false,
+    "execution_time": 0.0,
+    "metrics": {
+      "accuracy": 0.4827586206896552,
+      "input_length": 95,
+      "output_length": 65
+    },
+    "dataset": "humaneval",
+    "split": "test",
+    "error": null
+  }
+]

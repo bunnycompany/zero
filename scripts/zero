@@ -1,0 +1,155 @@
+#!/bin/bash
+# zero — talk to Zero from anywhere.
+#
+#   zero remind me to call mom at 6      ask it something (quotes optional)
+#   zero                                  show the last answer
+#   zero status                           is it awake? what is it doing?
+#   zero log                              recent activity, human-readable
+#   zero start | stop                     run it / stop it
+#
+# Install:  ln -s ~/zero/scripts/zero /usr/local/bin/zero
+set -euo pipefail
+
+ZERO_ROOT="${ZERO_ROOT:-$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")/.." && pwd)}"
+export ZERO_ROOT
+NS="$ZERO_ROOT/namespace"
+
+if [ -x "$ZERO_ROOT/.venv/bin/python3" ]; then PY="$ZERO_ROOT/.venv/bin/python3"
+elif [ -x "$HOME/.venv/bin/python3" ]; then PY="$HOME/.venv/bin/python3"
+else PY="python3"; fi
+
+_answer() {
+    "$PY" - <<'PY' 2>/dev/null || echo "(nothing yet)"
+import json, os, sys
+p = os.path.join(os.environ["ZERO_ROOT"], "namespace", "answer", "current")
+try:
+    print(json.load(open(p))["payload"]["text"])
+except Exception:
+    sys.exit(1)
+PY
+}
+
+
+_greet() {
+cat <<'TXT'
+  Zero — a quiet assistant that lives on this Mac.
+
+  Talk to it like a person:
+      zero remind me to call mom at six
+      zero what is in my downloads folder
+      zero tidy up the screenshots on my desktop
+
+  Then read what it said back:
+      zero              the last thing it told you
+      zero log          the conversation so far
+      zero status       is it awake, and what mode is it in
+
+  Right now it is in SHADOW MODE, which means it will tell you what it
+  would have done but never actually change anything. That is on purpose:
+  spend a day asking it things and reading the answers. Nothing can break.
+
+  When you trust it, you can let it act for real — that takes a deliberate
+  step you have to do by hand, and Zero can never do it for itself:
+      echo live > namespace/control/mode      (and shadow to stop again)
+
+  Everything stays on this machine. Zero never speaks unless you ask.
+TXT
+}
+
+_alive() { pgrep -f "$ZERO_ROOT/main.py" >/dev/null 2>&1; }
+
+case "${1:-}" in
+  help|--help|-h)
+      _greet ;;
+  "")
+      # first run has nothing to show — teach instead of printing "(nothing yet)"
+      if [ ! -s "$NS/answer/current" ]; then _greet; else _answer; fi ;;
+  status)
+      if _alive; then
+          echo "Zero is awake — $(cat "$NS/status/current" 2>/dev/null || echo idle)"
+          echo "mode: $(cat "$NS/control/mode" 2>/dev/null || echo 'shadow (nothing is executed for real)')"
+      else
+          echo "Zero is not running. Start it with: zero start"
+      fi ;;
+  log)
+      "$PY" - <<'PY'
+import json, os
+p = os.path.join(os.environ["ZERO_ROOT"], "namespace", "log", "journal.ndjson")
+rows = []
+for line in open(p):
+    try: rows.append(json.loads(line))
+    except Exception: pass
+for e in rows[-25:]:
+    ev = e.get("event", "")
+    if ev == "command_received": print(f"  you › {e.get('text','')}")
+    elif ev == "answered":       print(f"  zero › {e.get('text','')}")
+    elif ev == "proposed":       print(f"        (would {e.get('tool')} {e.get('args')})")
+PY
+      ;;
+  start)
+      if _alive; then echo "already running"; else
+          nohup "$ZERO_ROOT/launch_zero.sh" >"$ZERO_ROOT/namespace/log/launch.log" 2>&1 &
+          sleep 3
+          if _alive; then
+              echo "starting Zero… (loading its brain — about a minute; first ever run downloads ~3.6GB)"
+          else
+              echo "Zero didn't start. The log says:"
+              tail -3 "$ZERO_ROOT/namespace/log/launch.log" 2>/dev/null | sed 's/^/    /'
+          fi
+      fi ;;
+  stop)
+      pkill -f "$ZERO_ROOT/main.py" 2>/dev/null || true
+      pkill -f "observer.context_monitor" 2>/dev/null || true
+      echo "Zero stopped." ;;
+  remind|at|every)
+      # zero remind "water plants" in 2h   |   zero every 1d "review evals"
+      "$PY" -c "
+import sys, time, re
+from zero import scheduler
+args = sys.argv[1:]
+verb = args[0]; rest = args[1:]
+text = ' '.join(rest)
+now = time.time()
+# tiny natural-time parse: 'in 2h', 'in 30m', 'tomorrow 9am' -> best effort
+secs = {'s':1,'m':60,'h':3600,'d':86400}
+m = re.search(r'in (\\d+)\\s*([smhd])', text)
+every = None
+delay = 0
+if verb == 'every':
+    e = re.search(r'^(\\d+)\\s*([smhd])', text)
+    if e:
+        every = int(e.group(1))*secs[e.group(2)]; delay = every
+        text = text[e.end():].strip().lstrip('-').strip()
+elif m:
+    delay = int(m.group(1))*secs[m.group(2)]
+    text = (text[:m.start()] + text[m.end():]).strip()
+if not text:
+    print('  what should I remind you to do?'); sys.exit(0)
+scheduler.add(text, now + (delay or 1), every=every)
+when = 'every %d seconds' % every if every else ('in %d seconds' % delay if delay else 'shortly')
+print('  ok — I will bring up \\'%s\\' %s.' % (text, when))
+" "$@" ;;
+
+  *)
+      if ! _alive; then echo "Zero isn't running — starting it first."; "$0" start; sleep 2; fi
+      "$PY" -c "
+from zero import ns
+ns.submit_command(' '.join(__import__('sys').argv[1:]))" "$@"
+      # wait with the user rather than making them poll blindly: show the
+      # live thinking tail, then print the answer when it lands
+      before_m=$(stat -f %m "$NS/answer/current" 2>/dev/null || echo 0)
+      printf "  thinking"
+      for i in $(seq 1 90); do
+          now_m=$(stat -f %m "$NS/answer/current" 2>/dev/null || echo 0)
+          if [ "$now_m" != "$before_m" ]; then
+              echo
+              echo "  zero › $(_answer)"
+              exit 0
+          fi
+          printf "."
+          sleep 1
+      done
+      echo
+      echo "  (still working — check back with:  zero)"
+      ;;
+esac

@@ -1,0 +1,342 @@
+[
+  {
+    "task_id": "humaneval_0",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 1.9937021732330322,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "humaneval_1",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 1.8311009407043457,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "humaneval_2",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 1.7692890167236328,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "humaneval_3",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 1.819627046585083,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "humaneval_4",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 1.923870325088501,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "humaneval_5",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 2.057252883911133,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "humaneval_6",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 1.9001779556274414,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "humaneval_7",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 1.8752870559692383,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "humaneval_8",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 1.8675720691680908,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "humaneval_9",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n``` \n",
+    "success": true,
+    "execution_time": 1.855010986328125,
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "input_length": 95,
+      "output_length": 110
+    },
+    "dataset": "humaneval",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_0",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.2888429164886475,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_1",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.3510451316833496,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_2",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.397953987121582,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_3",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.3449013233184814,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_4",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.373284101486206,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_5",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.5295920372009277,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_6",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.4158830642700195,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_7",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.408787250518799,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_8",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.3943979740142822,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  },
+  {
+    "task_id": "mbpp_9",
+    "task_type": "code_generation",
+    "input_data": "Write a function to reverse a string.",
+    "expected_output": "def reverse_string(s):\\n    return s[::-1]",
+    "actual_output": "```python\ndef reverse_string(text):\n  \"\"\"Reverses a given string.\n\n  Args:\n    text: The string to be reversed.\n\n  Returns:\n    The reversed string.\n  \"\"\"\n  return text[::-1]\n``` \n",
+    "success": true,
+    "execution_time": 2.391479253768921,
+    "metrics": {
+      "accuracy": 0.625,
+      "input_length": 42,
+      "output_length": 180
+    },
+    "dataset": "mbpp",
+    "split": null,
+    "error": null
+  }
+]

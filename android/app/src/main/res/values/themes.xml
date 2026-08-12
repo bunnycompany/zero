@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light parent: the DC-1 is paper; the pre-Compose window must not flash dark -->
+    <style name="Theme.ZeroChat" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

@@ -1,0 +1,6 @@
+# Zero runtime deps — install into a Python 3.12 venv:
+#   python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+mlx
+mlx-lm
+pyobjc
+pytest

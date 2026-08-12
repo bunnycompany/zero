@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>              <string>computer.zero.agent</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__ZERO_ROOT__/launch_zero.sh</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>ZERO_ROOT</key>      <string>__ZERO_ROOT__</string>
+    </dict>
+    <!-- KeepAlive IS the supervisor: crash -> relaunch. This one block answers
+         both "make it a daemon" and "what restarts it when it dies". -->
+    <key>RunAtLoad</key>          <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key> <false/>
+    </dict>
+    <!-- don't crash-loop hot: launchd throttles restarts to this interval -->
+    <key>ThrottleInterval</key>   <integer>30</integer>
+    <key>StandardOutPath</key>    <string>__ZERO_ROOT__/namespace/log/daemon.log</string>
+    <key>StandardErrorPath</key>  <string>__ZERO_ROOT__/namespace/log/daemon.log</string>
+</dict>
+</plist>

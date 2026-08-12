@@ -1,0 +1,36 @@
+[
+  {
+    "task_id": "humaneval_0",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "## High-level action:  Implement a recursive function to compute the nth Fibonacci number.\n\n**Action Breakdown:**\n\n1. **Define the function:**  Create a function named `fibonacci(n)` that takes an integer `n` as input, representing the desired Fibonacci number's position.\n2. **Base Cases:**  Define the base cases for the Fibonacci sequence:\n   - `fibonacci(0) = 0`\n   - `fibonacci(1) = 1`\n3. **Recursive Step:**  Implement the recursive logic to calculate the nth Fibonacci number:\n   -  `fibonacci(n) = fibonacci(n-1) + fibonacci(n-2)`\n4. **Return Value:**  Return the calculated Fibonacci number as the result of the function.\n\n**Example Implementation (Python):**\n\n```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n\n# Example usage\nprint(fibonacci(0))  # Output: 0\nprint(fibonacci(1))  # Output: 1\nprint(fibonacci(5))  # Output: 5\n",
+    "success": false,
+    "execution_time": 10.027549028396606,
+    "metrics": {
+      "accuracy": 0.4782608695652174,
+      "input_length": 95,
+      "output_length": 891
+    },
+    "dataset": "humaneval",
+    "split": "test",
+    "error": null
+  },
+  {
+    "task_id": "humaneval_1",
+    "task_type": "code_generation",
+    "input_data": "Write a function to compute the nth Fibonacci number.",
+    "expected_output": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n-1) + fibonacci(n-2)",
+    "actual_output": "## High-level action:  Implement a recursive function to compute the nth Fibonacci number.\n\n**Action Breakdown:**\n\n1. **Define the function:**  Create a function named `fibonacci(n)` that takes an integer `n` as input, representing the desired Fibonacci number's position.\n2. **Base Cases:**  Define the base cases for the Fibonacci sequence:\n   - `fibonacci(0) = 0`\n   - `fibonacci(1) = 1`\n3. **Recursive Step:**  Implement the recursive logic to calculate the nth Fibonacci number:\n   -  `fibonacci(n) = fibonacci(n-1) + fibonacci(n-2)`\n4. **Return Value:**  Return the calculated Fibonacci number as the result of the function.\n\n**Example Implementation (Python):**\n\n```python\ndef fibonacci(n):\n  if n <= 1:\n    return n\n  else:\n    return fibonacci(n-1) + fibonacci(n-2)\n\n# Example usage\nprint(fibonacci(0))  # Output: 0\nprint(fibonacci(1))  # Output: 1\nprint(fibonacci(5))  # Output: 5\n",
+    "success": false,
+    "execution_time": 8.603491067886353,
+    "metrics": {
+      "accuracy": 0.4782608695652174,
+      "input_length": 95,
+      "output_length": 891
+    },
+    "dataset": "humaneval",
+    "split": "test",
+    "error": null
+  }
+]

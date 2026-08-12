@@ -1,0 +1,13 @@
+{
+  "name": "@0-computer/zero",
+  "version": "0.1.0",
+  "description": "Zero — a quiet assistant that lives on your Mac. This installer sets it up.",
+  "bin": { "zero": "bin/zero.js" },
+  "files": ["bin/", "install.js", "setup.sh", "README.md"],
+  "scripts": { "postinstall": "node install.js || true" },
+  "engines": { "node": ">=18" },
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "license": "UNLICENSED",
+  "repository": { "type": "git", "url": "https://github.com/bunnycompany/zero" }
+}
