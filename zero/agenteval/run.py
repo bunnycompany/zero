@@ -71,6 +71,7 @@ def run_all():
                     "importance": mf.get("importance", 5), "ts_observed": now,
                     "ts_invalidated": now if mf.get("invalidated") else None,
                     "last_accessed": now,
+                    "origin": mf.get("origin", ""), "speaker": mf.get("speaker", ""),
                 })
 
             executor = DangerCore()

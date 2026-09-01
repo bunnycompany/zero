@@ -15,6 +15,7 @@ enum Namespace {
     static var answerFile: URL { root.appendingPathComponent("answer/current") }
     static var thinkingFile: URL { root.appendingPathComponent("thinking/current") }
     static var inboxDir: URL { root.appendingPathComponent("command/inbox") }
+    static var presenceFile: URL { root.appendingPathComponent("her/presence/current") }
 
     /// The agent rewrites status at least every 10s, so a stale file means it
     /// is gone. Without this the menubar shows a green IDLE dot for an agent
@@ -60,17 +61,42 @@ enum Namespace {
         return (payload["text"] as? String) ?? ""
     }
 
+    /// Her's presence doc: the line that is there when you look, a glance
+    /// for small displays, and the question she has open (if any). Mirrors
+    /// her/presence.py::compose. A stale doc is still shown — presence is
+    /// what she last knew, and liveness is a separate, honest light.
+    static func readPresence() -> HerPresence? {
+        guard let data = try? Data(contentsOf: presenceFile),
+              let doc = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              doc["v"] as? Int == 1,
+              let payload = doc["payload"] as? [String: Any]
+        else { return nil }
+        var q: HerQuestion? = nil
+        if let qd = payload["question"] as? [String: Any],
+           let id = qd["id"] as? String, let text = qd["text"] as? String {
+            q = HerQuestion(id: id, text: text)
+        }
+        return HerPresence(line: payload["line"] as? String ?? "",
+                           glance: payload["glance"] as? String ?? "",
+                           attention: payload["attention"] as? Bool ?? false,
+                           question: q)
+    }
+
     /// One file per submission — a queue, so two fast submissions never
     /// clobber each other. The agent claims files by renaming them out.
-    static func submitCommand(_ text: String) {
+    /// replyTo marks the text as an answer to one of Her's questions; it is
+    /// then never treated as a request (main.py routes it to her/intake).
+    static func submitCommand(_ text: String, replyTo: String? = nil) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         try? FileManager.default.createDirectory(at: inboxDir, withIntermediateDirectories: true)
+        var payload: [String: Any] = ["text": trimmed, "source": "human"]
+        if let r = replyTo { payload["reply_to"] = r }
         let doc: [String: Any] = [
             "v": 1,
             "ts": Date().timeIntervalSince1970,
             "writer": "human",
-            "payload": ["text": trimmed],
+            "payload": payload,
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: doc) else { return }
         let name = String(format: "%.6f.json", Date().timeIntervalSince1970)
@@ -78,10 +104,23 @@ enum Namespace {
     }
 }
 
+struct HerQuestion {
+    var id: String
+    var text: String
+}
+
+struct HerPresence {
+    var line: String
+    var glance: String
+    var attention: Bool
+    var question: HerQuestion?
+}
+
 struct AgentState {
     var status: String
     var answer: String
     var thinking: String
+    var her: HerPresence?
 
     var alive: Bool { status != "asleep" }
 
@@ -109,7 +148,8 @@ struct AgentState {
     static func load() -> AgentState {
         AgentState(status: Namespace.readStatus(),
                    answer: Namespace.readAnswer(),
-                   thinking: Namespace.readThinking())
+                   thinking: Namespace.readThinking(),
+                   her: Namespace.readPresence())
     }
 }
 
@@ -118,6 +158,10 @@ class ZeroState: ObservableObject {
     // lives here (not @State in the view) because the CommandLineTools
     // toolchain lacks the SwiftUI macros plugin that @State now requires
     @Published var inputText: String = ""
+    /// Her's question gets its own box: answering her and asking Zero are
+    /// different acts, and a box that guesses which one you meant is how
+    /// a request would get swallowed as an answer.
+    @Published var herReply: String = ""
     /// Echo what the user just said, immediately — silence after pressing
     /// return reads as "it didn't hear me".
     @Published var lastAsked: String = ""
@@ -139,9 +183,12 @@ struct ZeroApp: App {
         WindowGroup(id: "dashboard") { dashboard }
             .windowStyle(.hiddenTitleBar)
 
-        MenuBarExtra(state.agent.headline, systemImage: state.agent.alive
-                     ? (state.agent.status == "idle" ? "circle.fill" : "brain.head.profile")
-                     : "moon.zzz") {
+        // Her's ambient dot: `sparkle` only when her presence doc says
+        // attention — which only a human-set level (ambient/live) can set.
+        MenuBarExtra(state.agent.headline, systemImage: !state.agent.alive
+                     ? "moon.zzz"
+                     : (state.agent.her?.attention == true ? "sparkle"
+                        : (state.agent.status == "idle" ? "circle.fill" : "brain.head.profile"))) {
             Button("Open Zero") {
                 openWindow(id: "dashboard")
                 NSApp.activate(ignoringOtherApps: true)
@@ -174,6 +221,30 @@ struct ZeroApp: App {
                     Text("Start it from a terminal with  zero start")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+
+                // Her: the line that is there when you look, and her question
+                if let her = state.agent.her, !her.line.isEmpty {
+                    Text(her.line)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let q = her.question {
+                        Text("She asks: \(q.text)")
+                            .font(.callout)
+                            .fixedSize(horizontal: false, vertical: true)
+                        TextField("Answer her — or type skip", text: $state.herReply)
+                            .textFieldStyle(.plain)
+                            .padding(10)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(10)
+                            .onSubmit {
+                                Namespace.submitCommand(state.herReply, replyTo: q.id)
+                                state.lastAsked = state.herReply
+                                state.herReply = ""
+                            }
+                    }
+                    Divider()
                 }
 
                 if !state.lastAsked.isEmpty {

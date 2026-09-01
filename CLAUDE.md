@@ -12,6 +12,8 @@ channel contract. This file is for any agent (Claude, under, …) editing this r
 - **One writer per namespace channel**, enforced by `zero/ns.py` (`OWNERS`).
   All namespace I/O goes through `zero/ns.py` — never `open()` a namespace path.
 - **`namespace/control/mode` is human-only.** Code may read it, never write it.
+- **`namespace/control/presence` is human-only** (Her's speech ladder). Same rule.
+  Her (`her/`) writes only `her/*` channels, never `answer`, `status`, or `control`.
 - **No sed, no shell string interpolation in tools.** File edits are literal
   Python string replacement with an occurrence guard (`danger_core/tools.py`).
 - **Relative tool paths resolve against `ZERO_ROOT`, never cwd**
@@ -23,7 +25,13 @@ channel contract. This file is for any agent (Claude, under, …) editing this r
 ## Verify every change
 
 ```bash
-~/.venv/bin/python3 -m unittest discover -s tests -q   # 47 tests, ~3s — must stay green
+~/.venv/bin/python3 -m unittest discover -s tests -q   # 146 tests, ~10s — must stay green
+```
+
+The suite runs without MLX (Linux CI included): `brain/orchestrator.py` fails at
+model-load time, not import time, when `mlx_lm` is absent.
+
+```bash
 ```
 
 Model-layer eval (loads 6.7GB model, ~2 min; run when touching brain/prompt/parse):
@@ -59,5 +67,8 @@ cd gui && swift build
 | `observer/` | NSWorkspace context monitor (separate process) |
 | `zero/ns.py`, `zero/nspath.py` | the only namespace I/O module + path resolution |
 | `zero/agenteval/` | model-layer scenario evals |
+| `her/` | Her: intake (`intake.py`), presence + unsent log (`presence.py`), devices + LAN bridge (`devices.py`, `bridge.py`), `her` CLI, glasses page — see `docs/her.md` |
+| `npm/`, `npm-her/` | the `@0-computer/zero` and `@0-computer/her` installers (thin; no agent code) |
 | `tests/` | wiring-layer tests (sandboxed, no MLX) |
 | `gui/` | SwiftUI menubar app (SwiftPM) |
+| `android/` | phone app: Her (bridge client, Glyph toy in the `nothing` flavor) + model chat |

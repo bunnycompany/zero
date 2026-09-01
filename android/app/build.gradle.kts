@@ -59,7 +59,19 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Two flavors, one app id. `nothing` adds Her as a Glyph Toy on the
+    // Nothing Phone (3) and needs the Glyph Matrix SDK aar dropped into
+    // app/libs/ (from github.com/Nothing-Developer-Programme/GlyphMatrix-Developer-Kit);
+    // `plain` builds anywhere with no extra binaries. Both talk to Her's bridge.
+    flavorDimensions += "device"
+    productFlavors {
+        create("plain") { dimension = "device" }
+        create("nothing") { dimension = "device" }
+    }
 }
+
+val glyphSdk = file("libs/glyph-matrix-sdk-2.0.aar")
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.06.01")
@@ -72,6 +84,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
 
     implementation("com.squareup.okhttp3:okhttp:5.4.0")
+    if (glyphSdk.exists()) {
+        "nothingImplementation"(files(glyphSdk))
+    } else {
+        logger.warn("Glyph Matrix SDK not found at ${glyphSdk.path}: the `nothing` flavor will not compile; use `plain`.")
+    }
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     testImplementation("junit:junit:4.13.2")

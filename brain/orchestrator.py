@@ -3,7 +3,12 @@
 import json
 import logging
 
-from mlx_lm import load, generate, stream_generate
+try:
+    from mlx_lm import load, generate, stream_generate
+except ImportError:  # not an Apple-silicon Mac, or no MLX: the local brain
+    # cannot exist here, but the gateway brain (brain/remote.py) and the whole
+    # wiring-layer test suite still can. Fail at load time, not import time.
+    load = generate = stream_generate = None
 
 from brain import parse
 from zero import memory, ns
@@ -21,6 +26,12 @@ class BrainOrchestrator:
     def __init__(self, model_path=DEFAULT_MODEL):
         self.logger = logging.getLogger("BrainOrchestrator")
         self.logger.info(f"Loading model: {model_path}...")
+        if load is None:
+            raise RuntimeError(
+                "mlx_lm is not installed: the local brain needs an Apple-silicon "
+                "Mac with the ~/.venv from requirements.txt (or set ZERO_API_KEY "
+                "to think on the gateway instead)"
+            )
         self.model, self.tokenizer = load(model_path)
         self.model_path = model_path
         self.logger.info("Model loaded successfully.")

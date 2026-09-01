@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Her's voice path: your words in through the phone (or the glasses
+         paired to it as a headset), her answer spoken back the same way -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- cleartext allowed deliberately: the model server is a LAN host
          (the user's own Mac), reached by IP without TLS -->
@@ -18,6 +21,23 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Talk to Her. Also offered as the assist app so a long-press of
+             home (or a glasses tap routed to the phone's assistant) opens it. -->
+        <activity
+            android:name=".her.HerVoiceActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.ZeroChat">
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
     </application>

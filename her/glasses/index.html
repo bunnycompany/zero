@@ -1,0 +1,64 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Her</title>
+<!--
+  Her on a lens. A Ray-Ban Display web app: one glance line, big; the
+  full presence line, small; the question waiting for you, if any.
+  Served by her/bridge.py at /glasses/?t=<device token>. The token is kept
+  in localStorage after the first load so the URL you save in the Meta AI
+  app's developer mode can be the bare one.
+
+  Design for a 600x600 monochrome lens: black ground, one weight of light
+  text, nothing that needs colour to be read. No frameworks, no fonts,
+  no network beyond the bridge on your own wifi.
+-->
+<style>
+  html,body{margin:0;height:100%;background:#000;color:#e8ffe8;
+    font-family:-apple-system,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  main{display:flex;flex-direction:column;justify-content:center;gap:5vh;
+    height:100%;padding:8vh 8vw;box-sizing:border-box;text-align:center}
+  #glance{font-size:9vw;line-height:1.15;font-weight:600;letter-spacing:-.01em}
+  #line{font-size:4.2vw;line-height:1.4;opacity:.8}
+  #q{font-size:4.2vw;line-height:1.4;border-top:1px solid #2a4;padding-top:3vh;display:none}
+  #state{position:fixed;top:3vh;right:4vw;font-size:3vw;opacity:.5;letter-spacing:.1em;text-transform:uppercase}
+  .dot{display:inline-block;width:2.2vw;height:2.2vw;border-radius:50%;background:#e8ffe8;
+    margin-right:1.2vw;vertical-align:middle;opacity:.9}
+  .off .dot{opacity:.25}
+</style>
+<main>
+  <div id="state"><span class="dot"></span><span id="stateText">…</span></div>
+  <div id="glance">Her</div>
+  <div id="line">Connecting to your Mac…</div>
+  <div id="q"></div>
+</main>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var t = params.get("t");
+  try { if (t) localStorage.setItem("her_token", t); else t = localStorage.getItem("her_token"); } catch (e) {}
+  var glance = document.getElementById("glance"), line = document.getElementById("line"),
+      q = document.getElementById("q"), st = document.getElementById("stateText"),
+      stBox = document.getElementById("state");
+  function show(p) {
+    glance.textContent = p.presence && p.presence.glance ? p.presence.glance : "quiet";
+    line.textContent = p.presence && p.presence.line ? p.presence.line : "";
+    if (p.presence && p.presence.question) { q.style.display = "block"; q.textContent = "Her asks: " + p.presence.question.text; }
+    else { q.style.display = "none"; }
+    var alive = !!p.alive;
+    st.textContent = alive ? (p.status || "ready") : "asleep";
+    stBox.className = alive ? "" : "off";
+  }
+  function offline(msg) {
+    st.textContent = "no link"; stBox.className = "off";
+    line.textContent = msg || "Can't reach your Mac right now. What I know is still safe there.";
+  }
+  function poll() {
+    if (!t) { offline("Open this page once with the link  her glasses  prints on your Mac."); return; }
+    fetch("/v1/presence", { headers: { "Authorization": "Bearer " + t } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(show).catch(function () { offline(); });
+  }
+  poll(); setInterval(poll, 5000);
+})();
+</script>

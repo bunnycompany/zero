@@ -26,6 +26,11 @@ OWNERS = {
     "thinking": "brain",     # live reasoning tail while it works (ephemeral)
     "answer": "main",        # human-readable: what it says back, in English
     "checkpoint": "executor",
+    # Her — the companion layer. One writer each, same as everything else.
+    "her/intake": "her",       # getting-to-know-you state: asked/answered/skipped
+    "her/presence": "her",     # level-0 presence: the line that is there when you look
+    "her/pairing": "her",      # the live pairing code (absent = nothing may pair)
+    "her/devices": "bridge",   # paired devices: name, kind, token hash, last seen
 }
 
 
@@ -97,15 +102,21 @@ def _read_doc_file(path):
 
 # --- command queue (UI/CLI -> agent) ---------------------------------------
 
-def submit_command(text: str, source: str = "human"):
+def submit_command(text: str, source: str = "human", **meta):
     """Drop one command file into the inbox. source distinguishes an organic
     ask ("human") from a scheduled one ("scheduler") — the proactivity
     backtest only counts organic asks as ground truth, so the two must never
-    be conflated in the record."""
+    be conflated in the record. A device source ("phone", "glasses") is
+    untrusted by policy.effective_mode and can never exceed approve.
+
+    meta rides along in the payload untouched: `reply_to` marks an answer to a
+    Her question, `device` names which paired device spoke. Two keys are
+    reserved and cannot be overridden from outside: text and source."""
     nspath.inbox().mkdir(parents=True, exist_ok=True)
     now = time.time()
-    doc = {"v": SCHEMA_V, "ts": now, "writer": source,
-           "payload": {"text": text, "source": source}}
+    payload = {k: v for k, v in meta.items() if k not in ("text", "source")}
+    payload.update({"text": text, "source": source})
+    doc = {"v": SCHEMA_V, "ts": now, "writer": source, "payload": payload}
     _atomic(nspath.inbox() / f"{now:.6f}.json", json.dumps(doc, ensure_ascii=False))
 
 
@@ -223,3 +234,33 @@ def read_journal():
                 yield json.loads(line)
             except json.JSONDecodeError:
                 continue  # torn tail line during concurrent append
+
+
+# --- append-only Her log ------------------------------------------------------
+
+def append_line(path, writer: str, **fields):
+    """One JSON line onto an append-only file that is NOT the journal — Her's
+    unsent log. Same single-write atomicity argument as log(); no rotation,
+    because a human reviews this file line by line and the review verdicts
+    reference entries by id (rotating would orphan them). It is bounded by
+    how often Her forms an opinion, which is rare by design."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps({"ts": time.time(), "writer": writer, **fields}, ensure_ascii=False)
+    with open(path, "a") as f:
+        f.write(line + "\n")
+
+
+def read_lines(path):
+    """Yield parsed lines oldest-first from an append-only ndjson file,
+    skipping torn or malformed lines (a concurrent append is normal)."""
+    if not path.exists():
+        return
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                yield json.loads(line)
+            except json.JSONDecodeError:
+                continue

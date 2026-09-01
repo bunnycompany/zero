@@ -49,6 +49,19 @@ echo shadow > namespace/control/mode   # stop it acting (works instantly, mid-ta
 
 `shadow` is also the panic button. It is re-read before every single action.
 
+## Her
+
+Her is the part of Zero that gets to know you: three questions a day, in your
+own words, kept in plain files; a line that is already there when you look;
+and, when you pair them, your phone and your glasses. She never speaks first
+unless you raise her level by hand. See [docs/her.md](docs/her.md).
+
+```bash
+her                 what she'd say if you looked, and her question if any
+her <your answer>   answer her, or ask Zero through her
+her pair            add your phone        her glasses   add your Ray-Ban Display
+```
+
 ## What it can and can't do yet
 
 **Can:** answer in plain English, look through folders, read files, search,
@@ -71,6 +84,7 @@ model server to your local network.
 | path | what |
 |---|---|
 | `scripts/zero` | the command you actually use |
+| `scripts/her` | Her — the getting-to-know-you side, and your other devices |
 | `namespace/` | everything Zero knows and did, as plain files you can read |
 | `namespace/log/journal.ndjson` | append-only record of every action |
 | `brain/`, `danger_core/`, `observer/` | decide, act, watch |

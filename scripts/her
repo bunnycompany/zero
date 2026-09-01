@@ -1,0 +1,21 @@
+#!/bin/bash
+# her — talk to Her, the part of Zero that gets to know you.
+#
+#   her                        what she'd say if you looked, and her question if any
+#   her <your answer>          answer her, or ask Zero through her
+#   her pair | her glasses     add your phone / your Ray-Ban Display
+#   her profile | her unsent   what she knows / what she would have said
+#   her help                   everything
+#
+# Install:  ln -s ~/zero/scripts/her /usr/local/bin/her   (or via  npx @0-computer/her)
+set -euo pipefail
+
+ZERO_ROOT="${ZERO_ROOT:-$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")/.." && pwd)}"
+export ZERO_ROOT
+
+if [ -x "$ZERO_ROOT/.venv/bin/python3" ]; then PY="$ZERO_ROOT/.venv/bin/python3"
+elif [ -x "$HOME/.venv/bin/python3" ]; then PY="$HOME/.venv/bin/python3"
+else PY="python3"; fi
+
+cd "$ZERO_ROOT"
+exec "$PY" -m her.cli "$@"

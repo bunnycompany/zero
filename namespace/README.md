@@ -40,3 +40,24 @@ ndjson, ≤1.5K tokens injected into `decide()`. No embeddings by design until
 the scorer measurably misses.
 
 | `answer/current` | JSON doc | main | UIs, humans, `zero` CLI | what Zero says back, in plain English — written every single turn, successes and failures alike |
+
+## Her channels (her-v0)
+
+Her is the companion layer: it gets to know you, is present when you look,
+and reaches the devices you paired. It never gets a second brain or a second
+executor — every ask from a Her surface goes through `command/inbox` like any
+other. Its own state lives beside the agent's:
+
+| path | format | writer | readers | semantics |
+|---|---|---|---|---|
+| `her/intake/current` | JSON doc | her | UIs, `her` CLI | getting-to-know-you state: which questions were asked, answered (verbatim), skipped, retired |
+| `her/presence/current` | JSON doc | her | UIs, bridge, `her` CLI | level-0 presence: `{line, glance, state, question, attention}` — what is already there when you look. `glance` ≤ 40 chars for a lens or a Glyph |
+| `her/unsent.ndjson` | ndjson | her (append) | humans (`her review`) | what Her *would* have said and when. Shadow mode for speech: nothing here is delivered while `control/presence` is `quiet`. Review verdicts append to the same file |
+| `her/pairing/current` | JSON doc | her | bridge | the one live pairing code (10 min). Absent = no device may pair and the bridge has nothing to listen for |
+| `her/devices/current` | JSON doc | bridge (the `her` CLI for a local pair/forget) | UIs, `her` CLI | paired devices: `{id: {name, kind, token_sha256, paired, last_seen}}`. The token itself is shown once and never stored |
+| `control/presence` | text | **human only** | her | `quiet` \| `digest` \| `ambient` \| `live`. Missing or unknown reads as `quiet`. Read on every tick, never cached. Her may never write here — same rule as `control/mode` |
+
+Commands submitted from a Her surface carry extra payload keys: `reply_to`
+(the intake question this text answers) and `device` (which paired device
+spoke). Device sources (`phone`, `glasses`) are untrusted to `policy.effective_mode`
+and are capped at `approve` regardless of the real mode.

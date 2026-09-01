@@ -15,6 +15,7 @@ namespace/command/
 namespace/log/
 namespace/memory/
 namespace/schedule/
+namespace/her/
 .zero-backups/
 .zero.lock
 
@@ -30,6 +31,7 @@ android/local.properties
 android/keystore.properties
 android/*.keystore
 android/*.jks
+android/app/libs/*.aar
 
 # identity Worker
 identity/node_modules/

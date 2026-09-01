@@ -1,0 +1,14 @@
+{
+  "name": "@0-computer/her",
+  "version": "0.1.0",
+  "description": "Her — the part of Zero that gets to know you, on your Mac, phone and glasses. This installer sets it up.",
+  "bin": { "her": "bin/her.js" },
+  "files": ["bin/", "install.js", "README.md"],
+  "scripts": { "postinstall": "node install.js || true" },
+  "dependencies": { "@0-computer/zero": "^0.1.0" },
+  "engines": { "node": ">=18" },
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "license": "UNLICENSED",
+  "repository": { "type": "git", "url": "https://github.com/bunnycompany/zero", "directory": "npm-her" }
+}

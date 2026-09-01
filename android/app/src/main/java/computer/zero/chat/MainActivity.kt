@@ -15,6 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import computer.zero.chat.her.HerScreen
+import computer.zero.chat.her.HerViewModel
 import computer.zero.chat.ui.ChatScreen
 import computer.zero.chat.ui.SettingsScreen
 import computer.zero.chat.ui.TabletScreen
@@ -60,9 +62,13 @@ class MainActivity : ComponentActivity() {
             // is deliberately not honored (family devices end up in odd states).
             MaterialTheme(colorScheme = PaperLight) {
                 val vm: ChatViewModel = viewModel()
+                val herVm: HerViewModel = viewModel()
                 // rememberSaveable: fold/unfold recreates the activity and a
                 // plain remember{} would silently close the settings screen
                 var showSettings by rememberSaveable { mutableStateOf(false) }
+                // Her is the front door on a phone; the model chat (talking
+                // to a bare model server) stays one tap away for the curious
+                var showHer by rememberSaveable { mutableStateOf(true) }
 
                 // the Surface paints the panes; without it the manifest
                 // theme's window background bleeds through every gap
@@ -89,6 +95,8 @@ class MainActivity : ComponentActivity() {
                         else -> {
                             if (showSettings) {
                                 SettingsScreen(vm = vm, onDone = { showSettings = false })
+                            } else if (showHer) {
+                                HerScreen(vm = herVm, onOpenChat = { showHer = false })
                             } else {
                                 ChatScreen(vm = vm, onOpenSettings = { showSettings = true })
                             }

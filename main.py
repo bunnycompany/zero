@@ -7,6 +7,8 @@ import time
 
 from zero import consolidator, memory, ns, nspath, scheduler
 from brain import answer
+from her import intake as her_intake
+from her import presence as her_presence
 from danger_core.executor import DangerCore
 from brain.remote import build_brain
 
@@ -80,6 +82,9 @@ def idle_heartbeat():
     whole loop is single-threaded, so this can never race a command turn."""
     set_status("idle")
     consolidator.run_once()
+    # Her forms her presence on events only (a heartbeat, a turn, a context
+    # change) and never generates: this is a file rewrite, not a model call.
+    her_presence.tick()
 
 
 def handle_commands(brain, executor):
@@ -102,7 +107,20 @@ def handle_commands(brain, executor):
         handled = True
         # Journal source with every ask: only "human" (organic) asks are
         # ground truth for the proactivity backtest; "scheduler" asks are not.
-        ns.log("main", "command_received", text=c["text"], source=c.get("source", "human"))
+        ns.log("main", "command_received", text=c["text"], source=c.get("source", "human"),
+               device=c.get("device", ""))
+
+        # An answer to one of Her's questions is not a request: it is you
+        # telling her about yourself. It never reaches decide() or a tool —
+        # only commands that say reply_to are routed here, so Her can never
+        # swallow a real ask by guessing.
+        if her_intake.handles(c):
+            set_status("thinking")
+            text = her_intake.turn(c, brain)
+            ns.write_doc("answer", "main", {"text": text, "goal": c["text"]})
+            ns.log("main", "answered", text=text[:300], source=c.get("source", "human"), via="her")
+            her_presence.refresh("intake")
+            continue
 
         # FIFO, every message handled: messages that arrive while the model
         # is busy wait in the inbox and are processed in order — never dropped.
@@ -147,6 +165,9 @@ def handle_commands(brain, executor):
         # consolidator owns everything downstream of the queue)
         if hasattr(brain, "extract_observations"):
             brain.extract_observations(goal, call, result)
+
+        # the answer is what you see when you look; Her's line sits beside it
+        her_presence.refresh("answered")
 
     if not handled:
         return False

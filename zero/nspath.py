@@ -31,9 +31,14 @@ def ns() -> Path:
 #   checkpoint executor durability record (JSON doc)
 #   mode       shadow | approve | live — written by HUMANS only, never code
 
+#   presence_level  quiet | digest | ambient | live — Her's speech ladder,
+#              written by HUMANS only (namespace/control/presence), never code
+
 def state(channel: str) -> Path:
     if channel == "mode":
         return ns() / "control" / "mode"
+    if channel == "presence_level":
+        return ns() / "control" / "presence"
     return ns() / channel / "current"
 
 
@@ -75,3 +80,19 @@ def memory_core() -> Path:
 # (writer "scheduler"), so they ride the same queue, tiers, and journal.
 def schedule() -> Path:
     return ns() / "schedule" / "tasks.ndjson"
+
+
+# Her channels (see namespace/README.md "Her"): the companion layer keeps its
+# state beside the agent's, never inside it. her/intake, her/presence and
+# her/devices are ordinary `current` docs resolved by state(); the two below
+# are append-only logs with one writer each.
+def her_unsent() -> Path:
+    """What Her WOULD have said, and when — never delivered while the presence
+    level is `quiet`. Shadow mode for speech (docs/proactivity.md)."""
+    return ns() / "her" / "unsent.ndjson"
+
+
+def her_pairing() -> Path:
+    """The one live pairing code, if any (JSON doc, writer: her). Absent means
+    no device may pair and the bridge has nothing to listen for."""
+    return ns() / "her" / "pairing" / "current"

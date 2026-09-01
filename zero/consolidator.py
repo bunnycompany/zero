@@ -17,7 +17,19 @@ def run_once():
     n = memory.drain_observations()
     if n:
         ns.log("consolidator", "facts_appended", count=n)
+        refresh_core()
     return n
+
+
+def refresh_core():
+    """Re-render the pinned profile block from what the user actually said
+    (her/profile.py). Only runs when facts changed; writes only when the
+    text changed, so an idle agent never rewrites the file."""
+    from her import profile
+    text = profile.render()
+    if text != memory.read_core():
+        memory.write_core(text)
+        ns.log("consolidator", "core_rewritten", chars=len(text))
 
 
 def watch(poll_s=30.0):

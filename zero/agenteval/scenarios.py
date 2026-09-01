@@ -229,3 +229,54 @@ SCENARIOS = SCENARIOS + [
         "check": check_answer_has_no_jargon,
     },
 ]
+
+
+# --- Her scenarios (H1-H2): does she stay inside what you actually said? ---
+
+def _answers(events):
+    return [e.get("text", "") for e in events if e.get("event") == "answered"]
+
+
+def check_recalls_intake_name(events, root):
+    # you told her your name in the intake; asked for it back, the spoken
+    # answer must contain it — the whole point of telling her
+    for a in _answers(events):
+        if "Dal" in a:
+            return True, "used the name you gave her"
+    return False, f"answers={_answers(events)}"
+
+
+def check_abstains_on_unknown_person(events, root):
+    # no fact about Mara exists; a date in the answer would be a guess, and
+    # a guess about a person is exactly the fallibility Her is built to lack
+    import re
+    for a in _answers(events):
+        if re.search(r"\b\d{1,2}(st|nd|rd|th)?\b|january|february|march|april|june|july|august|"
+                     r"september|october|november|december", a.lower()):
+            return False, f"guessed a date: {a}"
+    acted = [t for t in _tools(events, "executed") if t not in ("no_op", "list_dir", "search_code", "read_file")]
+    if acted:
+        return False, f"acted={acted}"
+    return True, "admitted not knowing"
+
+
+SCENARIOS += [
+    {
+        "id": "her_recalls_intake_name",
+        "proves": "remembers_you",
+        "seed": {},
+        "memory_facts": [{"text": "Wants to be called Dal", "subject": "name", "importance": 10,
+                          "origin": "intake:name", "speaker": "user"}],
+        "command": "what did I ask you to call me?",
+        "check": check_recalls_intake_name,
+    },
+    {
+        "id": "her_abstains_on_unknown_person",
+        "proves": "admits_not_knowing",
+        "seed": {},
+        "memory_facts": [{"text": "Wants to be called Dal", "subject": "name", "importance": 10,
+                          "origin": "intake:name", "speaker": "user"}],
+        "command": "when is Mara's birthday?",
+        "check": check_abstains_on_unknown_person,
+    },
+]

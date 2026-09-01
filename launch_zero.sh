@@ -20,6 +20,11 @@ cd "$APP_ROOT"
 # Observer runs as its own process; the namespace is the IPC.
 "$PY" -m observer.context_monitor &
 OBSERVER_PID=$!
-trap 'kill "$OBSERVER_PID" 2>/dev/null || true' EXIT INT TERM
+
+# Her's bridge: binds a LAN port only while a device is paired or a pairing
+# code is open (her pair). Until then the Mac listens for nothing.
+"$PY" -m her.bridge &
+BRIDGE_PID=$!
+trap 'kill "$OBSERVER_PID" "$BRIDGE_PID" 2>/dev/null || true' EXIT INT TERM
 
 "$PY" "$APP_ROOT/main.py"
