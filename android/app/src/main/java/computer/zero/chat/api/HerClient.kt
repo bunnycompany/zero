@@ -73,7 +73,7 @@ class HerClient(private val baseUrl: String, private val token: String? = null) 
         return b
     }
 
-    private suspend inline fun <reified T> call(build: Request.Builder.() -> Request.Builder): Result<T> =
+    private suspend inline fun <reified T> call(crossinline build: Request.Builder.() -> Request.Builder): Result<T> =
         withContext(Dispatchers.IO) {
             runCatching {
                 http.newCall(build(req("")).build()).execute().use { resp ->
