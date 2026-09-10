@@ -1,0 +1,71 @@
+# Zero + Her — continuous verification on hosted runners.
+#
+# Three things a Linux dev box cannot check get checked here on every push:
+# the Swift menubar app compiles (macOS runner), the Android app's plain
+# flavor compiles and its unit tests pass (Android SDK on Linux), and the
+# Python wiring suite is green on a clean machine with no MLX (the local
+# brain fails at load time, not import time, by design).
+#
+# Not run here: the model-layer eval (needs the ~3.6GB model and Apple
+# silicon) and the Android `nothing` flavor (needs the Glyph Matrix SDK aar,
+# which is not redistributed in this repo).
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    name: python wiring suite (no MLX)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: wiring suite
+        run: python -m unittest discover -s tests -q
+      - name: promise coverage
+        run: python -m zero.agenteval.coverage
+      - name: installers parse
+        run: |
+          node --check npm/bin/zero.js
+          node --check npm/bin/preflight.js
+          node --check npm/install.js
+          node --check npm-her/bin/her.js
+          node --check npm-her/install.js
+      - name: npm pack dry-run
+        run: |
+          (cd npm && npm pack --dry-run)
+          (cd npm-her && npm pack --dry-run)
+
+  swift:
+    name: menubar app compiles (macOS)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: toolchain
+        run: swift --version
+      - name: build ZeroUI
+        run: swift build --package-path gui
+
+  android:
+    name: android plain flavor builds + unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
+      - name: gradle wrapper executable
+        run: chmod +x android/gradlew
+      - name: assemble plain debug
+        working-directory: android
+        run: ./gradlew :app:assemblePlainDebug --no-daemon --console=plain
+      - name: unit tests (HerGlyphArtTest)
+        working-directory: android
+        run: ./gradlew :app:testPlainDebugUnitTest --no-daemon --console=plain
