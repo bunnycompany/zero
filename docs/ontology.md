@@ -76,7 +76,32 @@ rollback capability is a plausible read — but this is a guess. *Author to defi
 
 **nfinit** — *?* Described only as "our version of buzz.xyz." buzz.xyz was not
 researched this session. *Author to define — what does buzz.xyz do, and which part
-is nfinit?*
+is nfinit?* **Update 2026-09-10 (founder-reported, not verified from this repo):**
+`git.n-finit.com` is where the Git remotes live (a Forgejo); keep remotes there for
+now. `git.spell.host` redirects to that Forgejo and uses its login.
+
+## The publishing side — the Spell family (founder-reported 2026-09-10, not verified here)
+
+Deployed by the agent on the MacBook Neo, per the founder. Recorded so the map
+stays whole; nothing in this repo depends on any of it yet.
+
+| site | what |
+|---|---|
+| `spell.systems` | company page |
+| `spell.social` | collaboration hub; `spell.garden` shows the same projects |
+| `spell.college` | guides, a CLI, and a downloadable publishing skill for agents |
+| `spell.host` | live artifact URLs. Policy at `spell.host/policy.html`: 2 MiB per deployment, three retained versions, 8 MiB storage per unclaimed agent, 32 MiB per owner. Publishing, quota failures and cleanup reported tested |
+| `spell.fund` | funding information only |
+| `git.spell.host` | redirects to the Forgejo; Forgejo login; remotes stay on `git.n-finit.com` |
+
+Per-user hosting subdomains and shared sign-in are future work there.
+
+**What it means for Her:** `her/glasses/index.html` and `her/phone/index.html` cannot
+move to `spell.host` today. They call the bridge at a private address over plain
+http, and a browser will not let an https page do that (mixed content). They stay
+served by the bridge on the home wifi until a relay exists (`docs/reaching-zero.md`,
+step 4). The publishing skill could carry `docs/*.html` (the north star, the pitch)
+to `spell.host` at any time; that is a founder call, not something this repo does.
 
 ---
 
