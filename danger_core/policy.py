@@ -59,6 +59,18 @@ def allowed_root() -> Path:
     return nspath.root()
 
 
+def _resolve(path_str: str) -> Path:
+    """Expand ~, anchor relative paths at the root, resolve symlinks and `..`.
+
+    Always resolve BEFORE checking — a symlink or `..` is judged by where it
+    lands, not by how it is spelled.
+    """
+    p = Path(path_str).expanduser()
+    if not p.is_absolute():
+        p = allowed_root() / p  # relative tool paths are root-relative, never cwd-relative
+    return p.resolve()
+
+
 def resolve_confined(path_str: str) -> Path:
     """Resolve (symlinks and .. included) BEFORE checking confinement.
 
@@ -66,11 +78,8 @@ def resolve_confined(path_str: str) -> Path:
     surface the agent must never touch (control/), and the safety layer
     itself (danger_core/ — self-modification always escalates).
     """
-    p = Path(path_str).expanduser()
+    p = _resolve(path_str)
     root = allowed_root()
-    if not p.is_absolute():
-        p = root / p  # relative tool paths are root-relative, never cwd-relative
-    p = p.resolve()
     if not p.is_relative_to(root):
         raise PermissionError(f"{p} is outside the allowed root {root}")
     for denied in _DENIED:
@@ -78,6 +87,36 @@ def resolve_confined(path_str: str) -> Path:
         if p == target or p.is_relative_to(target):
             raise PermissionError(f"{denied} is off-limits to the agent — human hands only")
     return p
+
+
+# The owner's real folders. The first question anyone asks is "what is in my
+# Downloads", and confining reads to the Zero root made it die here (US-024).
+# READ tier only — read_file / list_dir / search_code. Writes stay confined to
+# the root via resolve_confined: the agent may look at the house, not rearrange it.
+_READABLE_HOME_DIRS = ("Downloads", "Desktop", "Documents")
+
+
+def readable_roots() -> tuple:
+    """Expanded from $HOME at call time, never cached — tests point HOME at a
+    sandbox, and a symlinked folder is judged by where it really lands."""
+    home = Path.home()
+    return tuple((home / name).resolve() for name in _READABLE_HOME_DIRS)
+
+
+def resolve_readable(path_str: str) -> Path:
+    """READ-tier confinement: the Zero root (its _DENIED surfaces still
+    off-limits) plus the owner's Downloads, Desktop and Documents.
+
+    Symlinks and `..` are resolved first, so a path spelled under ~/Downloads
+    that lands anywhere else is refused.
+    """
+    p = _resolve(path_str)
+    if p.is_relative_to(allowed_root()):
+        return resolve_confined(path_str)  # keeps the _DENIED checks
+    for folder in readable_roots():
+        if p == folder or p.is_relative_to(folder):
+            return p
+    raise PermissionError(f"{p} is outside the allowed root and the readable home folders")
 
 
 # Everything that could let the agent change what it is allowed to do next, or

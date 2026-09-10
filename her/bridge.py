@@ -13,9 +13,10 @@
 #
 #   * Listens only when there is someone to listen for (a paired device, or
 #     a pairing code you opened). Otherwise no port is bound (US-054).
-#   * Private addresses only. A request from outside the house is refused
-#     before it is read — reaching Her from a cafe is the identity/relay
-#     project (docs/reaching-zero.md), not this file.
+#   * Private addresses only: your wifi, or your own Tailscale mesh. A request
+#     from the open internet is refused before it is read — reaching Her
+#     from a cafe without a mesh is the identity/relay project
+#     (docs/reaching-zero.md), not this file.
 #   * A device is a source the executor does not trust: read and report,
 #     never auto-mutate. Enforced in danger_core/policy.py, not here.
 #
@@ -33,7 +34,18 @@ from zero import ns
 
 MAX_BODY = 16 * 1024
 POLL_S = 2.0
-_GLASSES_PAGE = Path(__file__).with_name("glasses") / "index.html"
+HISTORY_DEFAULT = 20
+HISTORY_MAX = 200
+SNAPSHOT_HISTORY = 8
+_PAGES = {
+    "/glasses": Path(__file__).with_name("glasses") / "index.html",
+    "/her": Path(__file__).with_name("phone") / "index.html",
+}
+# Tailscale gives every node an address in the CGNAT range 100.64.0.0/10, and
+# docs/reaching-zero.md recommends a mesh (Tailscale) as the way to reach Her
+# from outside the house. Python's ipaddress.is_private says no to that range,
+# so without this the recommended path would be refused by the code.
+_CGNAT = ipaddress.ip_network("100.64.0.0/10")
 
 
 def _is_private(addr):
@@ -41,7 +53,9 @@ def _is_private(addr):
         ip = ipaddress.ip_address(addr.split("%")[0])
     except ValueError:
         return False
-    return ip.is_private or ip.is_loopback or ip.is_link_local
+    if ip.is_private or ip.is_loopback or ip.is_link_local:
+        return True
+    return ip.version == 4 and ip in _CGNAT
 
 
 def _alive():
@@ -53,10 +67,81 @@ def _alive():
     return time.time() - m < 30
 
 
+# --- the journal, as a phone reads it ---------------------------------------
+#
+# The journal is the scrollback: a phone that comes back after an hour picks
+# up where you left off by reading it, not by resuming a process. One pass
+# pairs every command_received with the answered event that follows it (the
+# loop is single-threaded and FIFO, so the next answered belongs to the most
+# recent open ask) and counts today's events for US-044. The pass is cached
+# on the journal's size and mtime: a phone polls every 1.5 s and the journal
+# can be 10 MB.
+
+_SCHEDULED = ("scheduler",)
+_EMPTY_TODAY = {"asks": 0, "answered": 0, "executed": 0, "shadowed": 0, "held": 0}
+_view_cache = {"key": None, "turns": [], "today": dict(_EMPTY_TODAY)}
+_view_lock = threading.Lock()
+
+
+def _same_local_day(ts, now):
+    return time.localtime(ts)[:3] == time.localtime(now)[:3]
+
+
+def _journal_view(now=None):
+    """(turns, today). turns: every organic and device ask in order, each
+    {ts, text, source, device, answer, answer_ts}. today, in local time:
+    asks, answered, executed, shadowed (mode shadow) and held (a proposal
+    waiting for a yes at the Mac: mode approve)."""
+    now = time.time() if now is None else now
+    from zero import nspath
+    try:
+        st = nspath.journal().stat()
+    except FileNotFoundError:
+        return [], dict(_EMPTY_TODAY)
+    key = (st.st_size, st.st_mtime_ns, time.localtime(now)[:3])
+    with _view_lock:
+        if _view_cache["key"] == key:
+            return list(_view_cache["turns"]), dict(_view_cache["today"])
+    turns, today, open_turn = [], dict(_EMPTY_TODAY), None
+    for e in ns.read_journal():
+        ev, ts = e.get("event"), e.get("ts", 0)
+        fresh = _same_local_day(ts, now)
+        if ev == "command_received":
+            open_turn = {"ts": ts, "text": e.get("text", ""), "source": e.get("source", "human"),
+                         "device": e.get("device") or "", "answer": None, "answer_ts": None}
+            turns.append(open_turn)
+            if fresh and open_turn["source"] not in _SCHEDULED:
+                today["asks"] += 1
+        elif ev == "answered":
+            if open_turn is not None and open_turn["answer"] is None:
+                open_turn["answer"], open_turn["answer_ts"] = e.get("text", ""), ts
+            if fresh:
+                today["answered"] += 1
+        elif ev == "executed" and fresh:
+            today["executed"] += 1
+        elif ev == "shadowed" and fresh:
+            today["held" if e.get("mode") == "approve" else "shadowed"] += 1
+    turns = [t for t in turns if t["source"] not in _SCHEDULED]
+    with _view_lock:
+        _view_cache.update(key=key, turns=turns, today=today)
+    return list(turns), dict(today)
+
+
+def history(limit=HISTORY_DEFAULT, now=None):
+    """The last `limit` organic and device turns, oldest first."""
+    limit = max(1, min(int(limit), HISTORY_MAX))
+    return _journal_view(now)[0][-limit:]
+
+
+def today_counts(now=None):
+    return _journal_view(now)[1]
+
+
 def snapshot(device_id=None):
     """What a surface needs to render Her, in one read."""
     p = presence.current()
     answer = ns.read_doc("answer")
+    turns, today = _journal_view()
     return {
         "alive": _alive(),
         "status": ns.read_text("status", default="idle"),
@@ -66,6 +151,8 @@ def snapshot(device_id=None):
         "answer_ts": (answer or {}).get("ts"),
         "device": device_id,
         "name": her_name(),
+        "history": turns[-SNAPSHOT_HISTORY:],
+        "today": today,
     }
 
 
@@ -107,8 +194,7 @@ class Handler(BaseHTTPRequestHandler):
         auth = self.headers.get("Authorization", "")
         if auth.lower().startswith("bearer "):
             return auth[7:].strip()
-        from urllib.parse import parse_qs, urlparse
-        return (parse_qs(urlparse(self.path).query).get("t") or [""])[0]
+        return (self._query().get("t") or [""])[0]
 
     def _device(self):
         return devices.authenticate(self._token())
@@ -124,6 +210,24 @@ class Handler(BaseHTTPRequestHandler):
     def _path(self):
         return self.path.split("?", 1)[0].rstrip("/") or "/"
 
+    def _query(self):
+        from urllib.parse import parse_qs, urlparse
+        return parse_qs(urlparse(self.path).query)
+
+    def _page(self, path):
+        """A surface's page (the glasses lens, the phone page). Loading it
+        needs no token; everything it reads does."""
+        try:
+            page = _PAGES[path].read_bytes()
+        except FileNotFoundError:
+            return self._json(404, {"error": "that page is not in this copy"})
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(page)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(page)
+
     # --- routes -------------------------------------------------------------
 
     def do_GET(self):
@@ -133,16 +237,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/health":
             return self._json(200, {"her": True, "name": her_name(), "alive": _alive(),
                                     "pairing_open": devices.pairing() is not None})
-        if path == "/glasses":
-            try:
-                page = _GLASSES_PAGE.read_bytes()
-            except FileNotFoundError:
-                return self._json(404, {"error": "no glasses page in this copy"})
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(page)))
-            self.end_headers()
-            return self.wfile.write(page)
+        if path in _PAGES:
+            return self._page(path)
         dev = self._device()
         if dev is None:
             return self._json(401, {"error": "this device isn't paired — run  her pair  on the Mac"})
@@ -152,6 +248,12 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/v1/answer":
             doc = ns.read_doc("answer")
             return self._json(200, {"answer": (doc or {}).get("payload"), "ts": (doc or {}).get("ts")})
+        if path == "/v1/history":
+            try:
+                limit = int((self._query().get("limit") or [HISTORY_DEFAULT])[0])
+            except ValueError:
+                limit = HISTORY_DEFAULT
+            return self._json(200, history(limit))
         return self._json(404, {"error": "no such thing"})
 
     def do_POST(self):

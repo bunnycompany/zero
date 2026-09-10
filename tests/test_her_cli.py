@@ -6,9 +6,12 @@
 
 import contextlib
 import io
+import json
 import os
 import tempfile
+import time
 import unittest
+from unittest import mock
 
 from her import cli, devices, intake, presence
 from zero import consolidator, memory, ns
@@ -63,6 +66,27 @@ class CliTestCase(unittest.TestCase):
         self.assertEqual(cmds[0]["text"], "what is in my downloads")
         self.assertNotIn("reply_to", cmds[0])
 
+    def test_remind_and_every_go_to_the_scheduler_not_the_brain(self):
+        # US-021: a leading "remind" or "every" is a clock, even while she has a
+        # question open — it never becomes an answer to her or an ask of the brain
+        intake.next_question()
+        code, out = self._run("remind", "me", "to", "water", "the", "plants", "tomorrow", "morning")
+        self.assertEqual(code, 0)
+        self.assertIn("'water the plants'", out)
+        self.assertIn("tomorrow morning", out)
+        code, out = self._run("every", "morning", "check", "the", "backups")
+        self.assertEqual(code, 0)
+        self.assertIn("every day at 8 in the morning", out)
+        self.assertEqual(ns.take_commands(), [])
+        from zero import nspath
+        rows = [json.loads(l) for l in nspath.schedule().read_text().splitlines() if l.strip()]
+        self.assertEqual([r["text"] for r in rows], ["water the plants", "check the backups"])
+        self.assertEqual(time.localtime(rows[0]["at"]).tm_hour, 9)
+        self.assertEqual(rows[1]["every"], 86400)
+        # and an ordinary ask still goes to her open question, unchanged
+        self._run("Dal")
+        self.assertEqual(ns.take_commands_full()[0]["reply_to"], "name")
+
     def test_skip_with_nothing_open_is_a_noop(self):
         code, out = self._run("skip")
         self.assertEqual(code, 0)
@@ -103,6 +127,17 @@ class CliTestCase(unittest.TestCase):
         code, out = self._run("review")
         self.assertEqual(code, 1)  # stdin is not a tty under the test runner
         self.assertEqual(presence.precision(), (0, 0.0))
+
+    def test_pair_prints_the_phone_page_address(self):
+        # the code dies at once (pairing() patched to None) so the wait loop
+        # returns on its first pass instead of holding the test for ten minutes
+        with mock.patch.object(devices, "lan_ip", return_value="192.168.1.9"), \
+                mock.patch.object(devices, "pairing", return_value=None):
+            code, out = self._run("pair")
+        self.assertEqual(code, 1)
+        self.assertIn("http://192.168.1.9:7770/her/", out)
+        self.assertIn("nothing to install", out)
+        self.assertRegex(out, r"code\s+[A-Z2-9]{6}")
 
 
 if __name__ == "__main__":

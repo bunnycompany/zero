@@ -54,7 +54,9 @@ so a paired phone can ask and can never act — even with the Mac in `live`.
 | presence: the line + a ≤40-char glance, on events only, no model call | `her/presence.py` | `tests/test_her_presence.py` |
 | unsent log, ladder, precision gate, dedup; triggers are rules (a date you told her, a repeated ask, a reminder about to fire, her own watcher dying) | `her/presence.py` | same |
 | pairing by six-letter code, token hashed at rest, five wrong tries burn the code, `forget` = dead key | `her/devices.py` | `tests/test_her_bridge.py` |
-| LAN bridge: private addresses only, binds a port only while there is someone to listen for | `her/bridge.py` | same, over a real loopback socket |
+| LAN bridge: private addresses only (home ranges and Tailscale's 100.64.0.0/10), binds a port only while there is someone to listen for | `her/bridge.py` | same, over a real loopback socket; `PrivateAddressGateTestCase` |
+| history over the journal: `GET /v1/history?limit=N` pairs each of your asks with the answer that followed; the presence snapshot carries the last 8 and `today` counts (asks, answered, executed, shadowed, held) for US-044 | `her/bridge.py::_journal_view` | `test_history_*`, `test_snapshot_carries_the_last_eight_turns_and_todays_counts` |
+| phone page: pair, presence, answer her, ask, history — any browser on the home wifi, nothing to install; `her pair` prints its address | `her/phone/index.html`, served at `/her/` | `test_phone_page_is_served_at_her_with_and_without_slash`; a Playwright smoke of the whole page ran on Linux |
 | `her` CLI | `her/cli.py`, `scripts/her` | `tests/test_her_cli.py` |
 | menubar: her line, her question in its own box, `sparkle` only on human-set attention | `gui/Sources/ZeroUI/ZeroUI.swift` | **not compiled here** (no Swift on this runner) |
 | phone: pair, presence, answer-her box, ask box, voice path; Glyph toy on the Nothing Phone (3) | `android/.../her/`, `android/app/src/nothing/` | `HerGlyphArtTest.kt`; **not compiled here** (no Android SDK on this runner) |
@@ -62,7 +64,7 @@ so a paired phone can ask and can never act — even with the Mac in `live`.
 | `npx @0-computer/her` | `npm-her/` | `node bin/her.js help` runs; depends on `@0-computer/zero`, unpublished |
 | model-layer scenarios: recalls the name you gave; abstains on a person you never mentioned | `zero/agenteval/scenarios.py` (`her_*`) | **not run here** (needs the model on a Mac) |
 
-Wiring layer: 146 tests, green on Linux with no MLX (the local brain now fails
+Wiring layer: 156 tests, green on Linux with no MLX (the local brain now fails
 at load time, not import time, so the suite runs anywhere).
 
 ## The devices, and what is actually true about them

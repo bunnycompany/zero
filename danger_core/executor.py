@@ -19,11 +19,11 @@ class DangerCore:
         d = self.dispatcher
         self.registry = {
             "no_op": (d.no_op, policy.READ, [], "Do nothing. Use when no action is warranted."),
-            "read_file": (d.read_file, policy.READ, ["path"], "Read a text file. args: {path}"),
-            "list_dir": (d.list_dir, policy.READ, [], "List a directory. args: {path}"),
-            "search_code": (d.search_code, policy.READ, ["pattern"], "Search files with ripgrep. args: {pattern, scope?}"),
-            "edit_file": (d.edit_file, policy.WRITE, ["path", "old_text", "new_text"], "Replace old_text (literal, must occur exactly once) with new_text. args: {path, old_text, new_text}"),
-            "write_file": (d.write_file, policy.WRITE, ["path", "content"], "Create or overwrite a file. args: {path, content}"),
+            "read_file": (d.read_file, policy.READ, ["path"], "Read a text file. Your own folder plus the owner's ~/Downloads, ~/Desktop and ~/Documents are readable. args: {path}"),
+            "list_dir": (d.list_dir, policy.READ, [], "List a directory. Your own folder plus the owner's ~/Downloads, ~/Desktop and ~/Documents are readable. args: {path}"),
+            "search_code": (d.search_code, policy.READ, ["pattern"], "Search files with ripgrep. scope may be your own folder or the owner's ~/Downloads, ~/Desktop or ~/Documents. args: {pattern, scope?}"),
+            "edit_file": (d.edit_file, policy.WRITE, ["path", "old_text", "new_text"], "Replace old_text (literal, must occur exactly once) with new_text, inside your own folder only. args: {path, old_text, new_text}"),
+            "write_file": (d.write_file, policy.WRITE, ["path", "content"], "Create or overwrite a file inside your own folder only. args: {path, content}"),
             "run_command": (d.run_command, policy.DANGER, ["cmd"], "Run a subprocess (argv list). args: {cmd}"),
         }
 

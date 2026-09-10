@@ -10,8 +10,11 @@
 # Install:  ln -s ~/zero/scripts/zero /usr/local/bin/zero
 set -euo pipefail
 
-ZERO_ROOT="${ZERO_ROOT:-$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")/.." && pwd)}"
+REPO="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")/.." && pwd)"
+ZERO_ROOT="${ZERO_ROOT:-$REPO}"
 export ZERO_ROOT
+# the zero package lives next to this script, wherever it is run from
+export PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}"
 NS="$ZERO_ROOT/namespace"
 
 if [ -x "$ZERO_ROOT/.venv/bin/python3" ]; then PY="$ZERO_ROOT/.venv/bin/python3"
@@ -102,33 +105,12 @@ PY
       pkill -f "observer.context_monitor" 2>/dev/null || true
       echo "Zero stopped." ;;
   remind|at|every)
-      # zero remind "water plants" in 2h   |   zero every 1d "review evals"
+      # zero remind call mom at six  |  zero at 6pm call mom  |  zero every morning check the backups
+      # the words are argv, never interpolated; zero/timeparse.py reads the time out of them
       "$PY" -c "
-import sys, time, re
+import sys
 from zero import scheduler
-args = sys.argv[1:]
-verb = args[0]; rest = args[1:]
-text = ' '.join(rest)
-now = time.time()
-# tiny natural-time parse: 'in 2h', 'in 30m', 'tomorrow 9am' -> best effort
-secs = {'s':1,'m':60,'h':3600,'d':86400}
-m = re.search(r'in (\\d+)\\s*([smhd])', text)
-every = None
-delay = 0
-if verb == 'every':
-    e = re.search(r'^(\\d+)\\s*([smhd])', text)
-    if e:
-        every = int(e.group(1))*secs[e.group(2)]; delay = every
-        text = text[e.end():].strip().lstrip('-').strip()
-elif m:
-    delay = int(m.group(1))*secs[m.group(2)]
-    text = (text[:m.start()] + text[m.end():]).strip()
-if not text:
-    print('  what should I remind you to do?'); sys.exit(0)
-scheduler.add(text, now + (delay or 1), every=every)
-when = 'every %d seconds' % every if every else ('in %d seconds' % delay if delay else 'shortly')
-print('  ok — I will bring up \\'%s\\' %s.' % (text, when))
-" "$@" ;;
+print(scheduler.remind(sys.argv[1], ' '.join(sys.argv[2:])))" "$@" ;;
 
   *)
       if ! _alive; then echo "Zero isn't running — starting it first."; "$0" start; sleep 2; fi

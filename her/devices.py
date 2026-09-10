@@ -173,3 +173,9 @@ def lan_ip():
             s.close()
     except OSError:
         return "127.0.0.1"
+
+
+def phone_url(ip=None, port=BRIDGE_PORT):
+    """Where any phone on the home wifi finds Her with nothing to install:
+    the page the bridge serves at /her/ (her/phone/index.html)."""
+    return f"http://{ip or lan_ip()}:{port}/her/"

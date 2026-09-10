@@ -16,9 +16,37 @@
 # a one-shot is marked done. The file has one writer: the scheduler.
 
 import json
+import re
 import time
 
-from zero import ns, nspath
+from zero import ns, nspath, timeparse
+
+_LEAD = re.compile(r"^(?:me\s+)?(?:to\s+|about\s+|that\s+)?", re.I)
+_STARTS_WITH_TIME = re.compile(
+    r"^(?:at|in|on|tomorrow|tonight|today|this|next|noon|midnight|every|each|daily|hourly|weekly)\b", re.I)
+
+
+def remind(verb, text, now=None):
+    """`zero remind|at|every <words>` and `her remind|every <words>`: read the
+    time out of the words, schedule the rest, and return the one sentence to
+    print. Nothing is scheduled when there is nothing to bring up."""
+    now = time.time() if now is None else now
+    text = " ".join(text.split())
+    verb = verb.lower()
+    if verb == "every" and not re.match(r"^(?:every|each)\b", text, re.I):
+        text = "every " + text
+    elif verb == "at" and not _STARTS_WITH_TIME.match(text):
+        text = "at " + text
+    p = timeparse.parse_full(text, now)
+    what = _LEAD.sub("", p.remaining, count=1).strip()
+    if not what:
+        return "  what should I remind you to do?"
+    if p.at is None:
+        add(what, now + 1)
+        return "  ok — I will bring up '%s' shortly, since I did not catch a time." % what
+    add(what, p.at, every=p.every)
+    when = timeparse.describe(p.at, p.every, now, relative=p.relative, note=p.note)
+    return "  ok — I will bring up '%s' %s." % (what, when)
 
 
 def _load():

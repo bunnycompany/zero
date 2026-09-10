@@ -4,6 +4,7 @@
 #
 #   her                      what she'd say if you looked — and her question, if any
 #   her <words>              answer her question, or ask Zero through her
+#   her remind <words>       a reminder in your own words ("… tomorrow morning"); also  her every …
 #   her skip                 pass on the current question
 #   her profile              everything she knows, in your words, with ids
 #   her forget <fact-id>     strike a fact out (kept, stamped, never used again)
@@ -96,6 +97,14 @@ def cmd_say(words, skip=False):
     return _wait_for_answer(before)
 
 
+def cmd_remind(argv):
+    # "remind me to water the plants tomorrow morning" / "every morning check the
+    # backups" is a clock, not a question: it goes to the scheduler, never the brain.
+    from zero import scheduler
+    print(scheduler.remind(argv[0], " ".join(argv[1:])))
+    return 0
+
+
 def cmd_profile():
     facts = profile.facts_for_display()
     if not facts:
@@ -123,9 +132,10 @@ def cmd_forget(fid):
 def cmd_pair():
     code = devices.open_pairing()
     ip = devices.lan_ip()
-    print(f"\n  On your phone, open Her → Pair, and enter:\n")
-    print(f"      address   http://{ip}:{PORT}")
+    print(f"\n  On any phone on this wifi, open this page in its browser — nothing to install:\n")
+    print(f"      {devices.phone_url(ip)}")
     print(f"      code      {code}\n")
+    print(f"  Or, in the Her app, open Pair and enter the address  http://{ip}:{PORT}  with the same code.")
     print("  The code works once and dies in ten minutes. Waiting…")
     known = set(devices.list_devices())
     for _ in range(devices.PAIR_TTL_S):
@@ -231,6 +241,8 @@ HELP = """
 
     her                      what she'd say if you looked — and her question, if any
     her <words>              answer her question, or ask Zero through her
+    her remind <words>       a reminder in your own words: her remind me to call mom at six
+    her every <words>        a repeating one: her every morning check the backups
     her skip                 pass on the current question
     her profile              everything she knows, in your words, with ids
     her forget <fact-id>     strike a fact out (kept, stamped, never used again)
@@ -272,6 +284,8 @@ def main(argv=None):
         return cmd_forget(rest[0])
     if c == "forget-device" and rest:
         return cmd_forget_device(rest[0])
+    if c.lower() in ("remind", "every"):
+        return cmd_remind(argv)
     return cmd_say(argv)
 
 

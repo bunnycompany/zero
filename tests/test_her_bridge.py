@@ -178,6 +178,127 @@ class BridgeTestCase(unittest.TestCase):
         devices.close_pairing()
         self.assertFalse(b.reconcile())
 
+    # --- the phone page ---------------------------------------------------
+
+    def test_phone_page_is_served_at_her_with_and_without_slash(self):
+        for path in ("/her", "/her/"):
+            with urllib.request.urlopen(self.base + path, timeout=5) as r:
+                self.assertEqual(r.status, 200)
+                self.assertTrue(r.headers["Content-Type"].startswith("text/html"))
+                page = r.read()
+            self.assertIn(b"Pair this phone", page)
+            self.assertIn(b"/v1/presence", page)  # it reads the same snapshot every surface does
+
+    # --- history and today's counts, over the journal ---------------------
+
+    def _turn(self, text, answer, source="human", device=""):
+        ns.log("main", "command_received", text=text, source=source, device=device)
+        if answer is not None:
+            ns.log("main", "answered", text=answer, source=source)
+
+    def test_history_pairs_each_ask_with_the_answer_that_follows(self):
+        did, token = self._pair()
+        ns.log("main", "answered", text="Hello, I am Zero.")           # the greeting: no ask to pair with
+        self._turn("what is in my downloads", "Three files.")
+        self._turn("check the backup drive", "Still there.", source="scheduler")  # not yours: hidden
+        self._turn("and my desktop", None, source="phone", device=did)  # still thinking
+        status, body = self._req("/v1/history", token=token)
+        self.assertEqual(status, 200)
+        self.assertEqual([t["text"] for t in body], ["what is in my downloads", "and my desktop"])
+        first, last = body
+        self.assertEqual(first["answer"], "Three files.")
+        self.assertGreaterEqual(first["answer_ts"], first["ts"])
+        self.assertEqual(first["source"], "human")
+        self.assertEqual(last["source"], "phone")
+        self.assertEqual(last["device"], did)
+        self.assertIsNone(last["answer"])
+        self.assertIsNone(last["answer_ts"])
+        self.assertEqual(set(first), {"ts", "text", "source", "device", "answer", "answer_ts"})
+
+    def test_history_limit_and_auth(self):
+        did, token = self._pair()
+        for i in range(5):
+            self._turn(f"ask {i}", f"answer {i}")
+        self.assertEqual(self._req("/v1/history?limit=2")[0], 401)
+        status, body = self._req("/v1/history?limit=2", token=token)
+        self.assertEqual([t["text"] for t in body], ["ask 3", "ask 4"])
+        status, body = self._req("/v1/history?limit=junk", token=token)
+        self.assertEqual(len(body), 5)
+        self.assertEqual(len(bridge.history(limit=0)), 1)               # clamped, never empty by accident
+        self.assertLessEqual(len(bridge.history(limit=10 ** 6)), bridge.HISTORY_MAX)
+
+    def test_snapshot_carries_the_last_eight_turns_and_todays_counts(self):
+        did, token = self._pair()
+        for i in range(10):
+            self._turn(f"ask {i}", f"answer {i}")
+        ns.log("executor", "executed", tool="write_file")
+        ns.log("executor", "shadowed", tool="write_file", tier="write", mode="shadow")
+        ns.log("executor", "shadowed", tool="write_file", tier="write", mode="approve")
+        ns.log("executor", "shadowed", tool="write_file", tier="write", mode="approve")
+        status, body = self._req("/v1/presence", token=token)
+        self.assertEqual(status, 200)
+        self.assertEqual([t["text"] for t in body["history"]], [f"ask {i}" for i in range(2, 10)])
+        self.assertEqual(body["today"],
+                         {"asks": 10, "answered": 10, "executed": 1, "shadowed": 1, "held": 2})
+
+    def test_today_is_the_local_day_and_the_view_follows_the_journal(self):
+        self._turn("morning ask", "done", source="human")
+        self._turn("timer", "done", source="scheduler")   # scheduled: never one of your asks
+        now = time.time()
+        self.assertEqual(bridge.today_counts(now)["asks"], 1)
+        self.assertEqual(bridge.today_counts(now)["answered"], 2)
+        # the same journal seen from two days later: nothing happened "today"
+        self.assertEqual(bridge.today_counts(now + 2 * 86400),
+                         {"asks": 0, "answered": 0, "executed": 0, "shadowed": 0, "held": 0})
+        self.assertEqual(len(bridge.history(now=now + 2 * 86400)), 1)  # but the scrollback keeps it
+        # a new line invalidates the cached pass
+        self._turn("second ask", "done")
+        self.assertEqual(bridge.today_counts(now)["asks"], 2)
+        self.assertEqual(bridge.history(now=now)[-1]["text"], "second ask")
+
+    def test_empty_journal_gives_an_empty_history(self):
+        self.assertEqual(bridge.history(), [])
+        self.assertEqual(bridge.today_counts()["asks"], 0)
+
+
+class PrivateAddressGateTestCase(unittest.TestCase):
+    # Tailscale addresses are 100.64.0.0/10 (CGNAT); docs/reaching-zero.md
+    # recommends that mesh, so the gate must let it in (docs/her-lineage.md).
+
+    def test_home_and_tailscale_addresses_are_private(self):
+        for addr in ("127.0.0.1", "192.168.1.7", "10.0.0.5", "172.16.3.4", "::1", "fe80::1%en0",
+                     "100.64.0.1", "100.100.1.2", "100.127.255.254"):
+            self.assertTrue(bridge._is_private(addr), addr)
+
+    def test_the_internet_is_not(self):
+        for addr in ("8.8.8.8", "1.1.1.1", "100.63.255.255", "100.128.0.0", "2606:4700::1111",
+                     "not an address", ""):
+            self.assertFalse(bridge._is_private(addr), addr)
+
+    def test_gate_refuses_by_client_address(self):
+        class FakeHandler(bridge.Handler):
+            def __init__(self, addr):
+                self.client_address = (addr, 5)
+                self.replies = []
+
+            def _json(self, code, body):
+                self.replies.append((code, body))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            old = os.environ.get("ZERO_ROOT")
+            os.environ["ZERO_ROOT"] = tmp
+            try:
+                self.assertTrue(FakeHandler("100.100.1.2")._gate())
+                h = FakeHandler("8.8.8.8")
+                self.assertFalse(h._gate())
+                self.assertEqual(h.replies[0][0], 403)
+                self.assertIn("refused", [e["event"] for e in ns.read_journal()])
+            finally:
+                if old is None:
+                    os.environ.pop("ZERO_ROOT", None)
+                else:
+                    os.environ["ZERO_ROOT"] = old
+
 
 if __name__ == "__main__":
     unittest.main()

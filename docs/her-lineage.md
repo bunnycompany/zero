@@ -29,7 +29,7 @@ that. `docs/failure-ledger.md` records why the second era was abandoned.
 | Gemini API (2.0 Flash / `gemini-flash-latest`) as the brain | **transformed** | Local `mlx-community/gemma-4-e2b-it-4bit` is a hard rule (`CLAUDE.md`); a gateway brain (`brain/remote.py`) is optional. Reason: the privacy promise in `docs/product-model.md` — nothing leaves the Mac by default. |
 | JWT login with an admin password (`/auth/login`) | **transformed** | Pairing by a six-letter code shown on the Mac, a device token hashed at rest, no password anywhere (`her/devices.py`). Reason: US-056 "a fingerprint, never a password"; `docs/reaching-zero.md`. |
 | Task queue with priority and `dependsOn` chaining; a planner that turns a goal into 1–5 agents | **not built, deliberately** | Zero runs one command, one decision, one tool, one answer (`main.py`), FIFO, single-flight. Chaining and autonomous multi-step planning are the capability that the trust ladder gates; they come after the approve rung has a Yes button (US-034), not before. Reason: `docs/failure-ledger.md` #3 and #9. |
-| Cron-like scheduler (`0 9 * * *`) | **kept** | `zero/scheduler.py`: `at` / `every`, firing into the inbox as `source: scheduler`. Cron syntax is not supported; natural-language times are still `needs-wiring` (US-021). |
+| Cron-like scheduler (`0 9 * * *`) | **kept** | `zero/scheduler.py`: `at` / `every`, firing into the inbox as `source: scheduler`. Cron syntax is not supported; natural-language times ("at six", "tomorrow morning", "every weekday at 9") are `zero/timeparse.py`, reached from `zero remind` and `her remind` (US-021, `works-today`). |
 | Web UI served by the daemon (login, ask box, task list) | **transformed** | The bridge serves `her/glasses/index.html` (a lens page). A general phone page served the same way is the next step, because it makes Her work on any phone with no app to install. |
 | Android app (Retrofit, task list, run goal) | **transformed** | `android/` Her mode: pair, presence, an answer-her box and an ask box, `HerVoiceActivity`, a Glyph toy on the Nothing Phone (3). Not compiled on the Linux runner; see `docs/her-production-readiness.md`. |
 | Android home-screen widget with `running / waiting / completedToday / scheduledJobs` | **transformed** | The Glyph Matrix toy is the widget (`HerGlyphToyService`). Per-day counts are not in the bridge snapshot yet; US-044 ("what did you actually do today?") is the story that wants them. |
@@ -66,6 +66,9 @@ that. `docs/failure-ledger.md` records why the second era was abandoned.
    for US-044.
 3. A phone page served by the bridge (`/her/`), so Her works from any browser
    on the home wifi before the Android build is verified.
-4. Natural-language times for the scheduler (US-021).
+   *1–3 are built (2026-09-10): `her/bridge.py` accepts 100.64.0.0/10, serves
+   `/v1/history` and `today` counts in the snapshot, and serves
+   `her/phone/index.html` at `/her/`; `her pair` prints that address.*
+4. ~~Natural-language times for the scheduler (US-021).~~ Done (2026-09-10): `zero/timeparse.py`, `tests/test_timeparse.py`.
 5. Only then the things the old documents wanted most and the trust ladder
    defers: an approve-rung Yes button, and after it, chains.

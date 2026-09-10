@@ -3,6 +3,7 @@
 # The sed replacement: literal semantics, count guard, snapshots, timeouts.
 
 import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,6 +17,13 @@ class ToolsTestCase(unittest.TestCase):
         self._old_root = os.environ.get("ZERO_ROOT")
         os.environ["ZERO_ROOT"] = self._tmp.name
         self.root = Path(self._tmp.name).resolve()
+        # a fake owner home, separate from the root (US-024 read widening)
+        self._home = tempfile.TemporaryDirectory()
+        self._old_home = os.environ.get("HOME")
+        os.environ["HOME"] = self._home.name
+        self.home = Path(self._home.name).resolve()
+        self.downloads = self.home / "Downloads"
+        self.downloads.mkdir()
         self.tools = ToolDispatcher()
 
     def tearDown(self):
@@ -23,7 +31,12 @@ class ToolsTestCase(unittest.TestCase):
             os.environ.pop("ZERO_ROOT", None)
         else:
             os.environ["ZERO_ROOT"] = self._old_root
+        if self._old_home is None:
+            os.environ.pop("HOME", None)
+        else:
+            os.environ["HOME"] = self._old_home
         self._tmp.cleanup()
+        self._home.cleanup()
 
     def _mk(self, name, content):
         p = self.root / name
@@ -99,6 +112,45 @@ class ToolsTestCase(unittest.TestCase):
         link.symlink_to("/etc")
         with self.assertRaises(PermissionError):
             self.tools.read_file(str(link / "hosts"))
+
+    # --- US-024: "what is in my Downloads" ---------------------------------
+
+    def test_list_and_read_downloads_allowed(self):
+        (self.downloads / "invoice.pdf").write_text("pdf")
+        (self.downloads / "photos").mkdir()
+        result = self.tools.list_dir("~/Downloads")
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["entries"], ["invoice.pdf", "photos/"])
+        result = self.tools.read_file("~/Downloads/invoice.pdf")
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["content"], "pdf")
+
+    @unittest.skipUnless(shutil.which("rg"), "ripgrep not installed")
+    def test_search_scope_downloads_allowed(self):
+        (self.downloads / "receipt.txt").write_text("total 42\n")
+        result = self.tools.search_code("total", scope="~/Downloads")
+        self.assertEqual(result["status"], "success")
+        self.assertIn("receipt.txt", result["output"])
+
+    def test_write_to_downloads_denied(self):
+        # reads were widened; writes must still be confined to the root
+        with self.assertRaises(PermissionError):
+            self.tools.write_file("~/Downloads/note.txt", "x")
+        self.assertFalse((self.downloads / "note.txt").exists())
+        (self.downloads / "invoice.txt").write_text("keep")
+        with self.assertRaises(PermissionError):
+            self.tools.edit_file("~/Downloads/invoice.txt", "keep", "gone")
+        self.assertEqual((self.downloads / "invoice.txt").read_text(), "keep")
+
+    def test_downloads_traversal_escape_denied(self):
+        for path in ("~/Downloads/../.ssh", "~/Downloads/../../etc", "~/Downloads/../"):
+            with self.assertRaises(PermissionError, msg=path):
+                self.tools.list_dir(path)
+
+    def test_root_still_readable_after_widening(self):
+        self._mk("notes.txt", "hello\n")
+        self.assertEqual(self.tools.read_file("notes.txt")["content"], "hello\n")
+        self.assertIn("notes.txt", self.tools.list_dir()["entries"])
 
 
 if __name__ == "__main__":

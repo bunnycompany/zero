@@ -25,13 +25,13 @@ unattended, not when the feature demos well.
 |---|---:|---:|---:|---:|---:|
 | Install | 4 | 4 | 0 | 0 | 8 |
 | First hour | 10 | 0 | 0 | 0 | 10 |
-| First week | 8 | 3 | 0 | 0 | 11 |
+| First week | 9 | 2 | 0 | 0 | 11 |
 | Trust climb | 8 | 1 | 0 | 0 | 9 |
 | Daily | 5 | 3 | 2 | 0 | 10 |
 | Remote | 6 | 0 | 0 | 4 | 10 |
 | Hosted | 2 | 0 | 0 | 3 | 5 |
 | Edge / failure | 4 | 1 | 1 | 0 | 6 |
-| **Total** | **47** | **12** | **3** | **7** | **69** |
+| **Total** | **48** | **11** | **3** | **7** | **69** |
 
 The build order falls out of the table: the first hour is already true; the install door and
 the trust climb's missing rung (`needs-wiring`) come before any new capability; remote and
@@ -193,8 +193,8 @@ hosted infra come last, and only behind the locks that already work.
 - **Persona:** Maya, who talks like a person.
 - **Story:** As a person who talks like a person, I want times like "at six" and "tomorrow morning" to just work, so that I never have to learn robot phrasing.
 - **Exchange:** "Remind me to call mom at six." → "Ok — I will bring up 'call mom' at six this evening."
-- **Check:** `zero remind call mom at six` produces a `tasks.ndjson` entry with `at` ≈ next 18:00 local. Today the CLI regex parses only "in N s/m/h/d" and "every Nd", so this task fires "shortly" instead.
-- **Status:** `needs-wiring`
+- **Check:** `zero remind call mom at six` produces a `tasks.ndjson` entry with text `call mom` and `at` = the next 18:00 local (06:00 if said after 18:00), and answers "at 6 this evening"; `her remind me to water the plants tomorrow morning` schedules 09:00 tomorrow and never reaches the brain. `zero/timeparse.py` is a pure `parse(text, now)` with no dependencies; "every weekday" is approximated as daily and says so. Tests: `tests/test_timeparse.py` (`TimeparseTests`, fixed `now` values across DST and the year boundary, `RemindTests`, `ZeroScriptTests`) and `test_her_cli.py::test_remind_and_every_go_to_the_scheduler_not_the_brain`.
+- **Status:** `works-today`
 
 ### US-022 — Say it once, it's kept
 - **Persona:** Diane, tired of repeating herself; Maya, with a head full of loose ends.
@@ -213,9 +213,9 @@ hosted infra come last, and only behind the locks that already work.
 ### US-024 — It can see my Downloads
 - **Persona:** Maya, drowning in downloads.
 - **Story:** As someone drowning in downloads, I want to ask what has piled up in my Downloads folder, so that I know what to delete without clicking through it all.
-- **Exchange:** "What's all this junk in my downloads?" → "I am not allowed to look outside my own folder yet, so I could not see your Downloads."
-- **Check:** A "what is in my downloads" ask yields a journal `executed` event for `list_dir` on `~/Downloads` with status success. Today `resolve_confined` raises and the journal shows a denied/failed turn instead.
-- **Status:** `needs-wiring`
+- **Exchange:** "What's all this junk in my downloads?" → "Your Downloads folder has forty-one files in it, mostly installers and PDFs from the last month."
+- **Check:** A "what is in my downloads" ask yields a journal `executed` event for `list_dir` on `~/Downloads` with status success. Read tools (`read_file`, `list_dir`, `search_code`) resolve through `policy.resolve_readable`, which admits `~/Downloads`, `~/Desktop` and `~/Documents` (expanded from `$HOME` at call time, symlinks and `..` resolved first, off-limits surfaces still denied); write tools keep `resolve_confined` and stay inside the Zero root. Pinned by `tests/test_policy_confinement.py`, `tests/test_tools.py` and `tests/test_danger_core.py`.
+- **Status:** `works-today`
 
 ### US-025 — Notes live in one plain file I can open myself
 - **Persona:** Maya, a paper-and-pen person.

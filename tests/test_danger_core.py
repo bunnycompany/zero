@@ -11,6 +11,7 @@ from pathlib import Path
 
 from danger_core import policy
 from danger_core.executor import DangerCore
+from zero import ns
 
 
 class DangerCoreTestCase(unittest.TestCase):
@@ -85,6 +86,32 @@ class DangerCoreTestCase(unittest.TestCase):
         result = self.executor.execute_tool("read_file", {"path": "/etc/hosts"})
         self.assertEqual(result["status"], "error")
         self.assertIn("denied", result["message"])
+
+    def test_downloads_listable_in_shadow_journals_executed(self):
+        # US-024 check: "what is in my downloads" -> executed list_dir on ~/Downloads
+        with tempfile.TemporaryDirectory() as home:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = home
+            try:
+                (Path(home) / "Downloads" / "invoice.pdf").parent.mkdir()
+                (Path(home) / "Downloads" / "invoice.pdf").write_text("x")
+                result = self.executor.execute_tool("list_dir", {"path": "~/Downloads"})
+                self.assertEqual(result["status"], "success")
+                self.assertEqual(result["result"]["entries"], ["invoice.pdf"])
+                events = [e for e in ns.read_journal() if e.get("tool") == "list_dir"]
+                self.assertEqual(events[-1]["event"], "executed")
+                # and the same folder is still write-denied, even live
+                self._set_mode("live")
+                result = self.executor.execute_tool(
+                    "write_file", {"path": "~/Downloads/note.txt", "content": "x"}
+                )
+                self.assertEqual(result["status"], "error")
+                self.assertIn("denied", result["message"])
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
 
     def test_control_channel_untouchable_even_live(self):
         self._set_mode("live")

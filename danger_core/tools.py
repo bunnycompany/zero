@@ -23,14 +23,14 @@ class ToolDispatcher:
         return {"status": "success", "output": f"no action taken{': ' + reason if reason else ''}"}
 
     def read_file(self, path):
-        p = policy.resolve_confined(path)
+        p = policy.resolve_readable(path)
         try:
             return {"status": "success", "content": p.read_text()}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
     def list_dir(self, path=None):
-        p = policy.resolve_confined(path) if path else policy.allowed_root()
+        p = policy.resolve_readable(path) if path else policy.allowed_root()
         try:
             entries = sorted(x.name + ("/" if x.is_dir() else "") for x in p.iterdir())
             return {"status": "success", "entries": entries}
@@ -38,7 +38,7 @@ class ToolDispatcher:
             return {"status": "error", "message": str(e)}
 
     def search_code(self, pattern, scope=None):
-        scope_p = policy.resolve_confined(scope) if scope else policy.allowed_root()
+        scope_p = policy.resolve_readable(scope) if scope else policy.allowed_root()
         return self.run_command(["rg", "-n", "--no-follow", "-e", pattern, str(scope_p)])
 
     # --- WRITE tier ---------------------------------------------------------
