@@ -1,0 +1,159 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Her</title>
+<!--
+  Her on any phone, with nothing to install. Served by her/bridge.py at
+  /her/ on your own wifi. Pair once with the code  her pair  prints on the
+  Mac; the device token stays in this browser's localStorage and is never
+  shown again. Everything here is the same three questions every Zero
+  surface answers: is it alive, did it hear me, what did it do.
+
+  No frameworks, no fonts, no network beyond the bridge. Grayscale first,
+  like the Android app: contrast from weight and rules, never hue.
+-->
+<style>
+  :root{--paper:#FBFAF8;--ink:#16161A;--graphite:#5A5A63;--rule:#E2DFD8;--slate:#8C8C95;--amber:#A9741A}
+  @media (prefers-color-scheme:dark){:root{--paper:#131319;--ink:#EDEBE6;--graphite:#A6A4AC;--rule:#31313B;--slate:#7C7C87;--amber:#D9A24B}}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 -apple-system,system-ui,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  main{max-width:36rem;margin:0 auto;padding:1rem 1rem 4rem;display:grid;gap:1rem}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:1rem}
+  h1{font:400 1.4rem/1.2 "Iowan Old Style",Palatino,Georgia,serif;margin:0}
+  .state{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--slate)}
+  .state .dot{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;background:var(--slate);margin-right:.4rem;vertical-align:middle}
+  .state.alive .dot{background:var(--ink)}
+  .state.busy .dot{background:var(--amber)}
+  section{border-top:1px solid var(--rule);padding-top:1rem;display:grid;gap:.6rem}
+  .glance{font:600 1.6rem/1.2 -apple-system,system-ui,sans-serif}
+  .line{color:var(--graphite)}
+  .q{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:1.1rem}
+  form{display:flex;gap:.5rem}
+  input{flex:1;font:inherit;padding:.6rem .7rem;border:1px solid var(--rule);border-radius:8px;background:transparent;color:var(--ink);min-width:0}
+  button{font:inherit;padding:.6rem .9rem;border:1px solid var(--ink);border-radius:8px;background:var(--ink);color:var(--paper);cursor:pointer}
+  button.quiet{background:transparent;color:var(--ink)}
+  button:disabled{opacity:.4}
+  .hint{font-size:.85rem;color:var(--slate)}
+  .err{font-size:.85rem;color:var(--amber)}
+  .history{display:grid;gap:.5rem}
+  .you{color:var(--graphite);font-size:.95rem}
+  .zero{font-family:"Iowan Old Style",Palatino,Georgia,serif;border-left:2px solid var(--amber);padding-left:.7rem}
+  [hidden]{display:none!important}
+</style>
+<main>
+  <header>
+    <h1 id="name">Her</h1>
+    <div class="state" id="state"><span class="dot"></span><span id="stateText">connecting</span></div>
+  </header>
+
+  <section id="pair">
+    <p class="line">On your Mac, run <b>her pair</b>. It prints a six-letter code that works once.</p>
+    <form id="pairForm">
+      <input id="code" placeholder="Code" autocomplete="off" autocapitalize="characters" maxlength="6" required>
+      <button type="submit">Pair this phone</button>
+    </form>
+    <p class="hint">Pairing lets this phone ask her anything over your own wifi. It can never change the Mac: anything from a phone waits for a yes given at the Mac.</p>
+    <p class="err" id="pairErr" hidden></p>
+  </section>
+
+  <section id="presence" hidden>
+    <div class="glance" id="glance">…</div>
+    <div class="line" id="line">Connecting to your Mac…</div>
+  </section>
+
+  <section id="question" hidden>
+    <div class="q" id="qText"></div>
+    <form id="answerForm">
+      <input id="answer" placeholder="Answer her" autocomplete="off">
+      <button type="submit">Tell her</button>
+    </form>
+    <div><button class="quiet" id="skip" type="button">Skip this one</button></div>
+  </section>
+
+  <section id="ask" hidden>
+    <form id="askForm">
+      <input id="askText" placeholder="Ask Zero anything" autocomplete="off">
+      <button type="submit">Ask</button>
+    </form>
+    <p class="hint" id="thinking" hidden>thinking…</p>
+    <p class="err" id="err" hidden></p>
+    <div class="history" id="history"></div>
+    <p class="hint" id="asleep" hidden>Your Mac is asleep. What you send waits for it there.</p>
+    <p class="hint"><button class="quiet" id="forget" type="button">Forget this Mac</button></p>
+  </section>
+</main>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var token = null;
+  try { token = localStorage.getItem("her_token"); } catch (e) {}
+  var pendingSince = null, question = null, timer = null;
+
+  function headers() { return token ? { "Authorization": "Bearer " + token } : {}; }
+  function api(path, body) {
+    var opts = { headers: Object.assign({ "Content-Type": "application/json" }, headers()) };
+    if (body !== undefined) { opts.method = "POST"; opts.body = JSON.stringify(body); }
+    return fetch(path, opts).then(function (r) {
+      return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ("HTTP " + r.status)); return j; });
+    });
+  }
+  function setState(text, cls) { $("stateText").textContent = text; $("state").className = "state " + (cls || ""); }
+  function show(paired) {
+    $("pair").hidden = paired; $("presence").hidden = !paired; $("ask").hidden = !paired;
+    $("question").hidden = !(paired && question);
+  }
+
+  function render(s) {
+    var p = s.presence || {};
+    $("name").textContent = s.name || "Her";
+    $("glance").textContent = p.glance || "quiet";
+    $("line").textContent = p.line || "";
+    question = p.question || null;
+    if (question) $("qText").textContent = "She asks: " + question.text;
+    $("question").hidden = !question;
+    setState(s.alive ? (s.status || "ready") : "asleep", s.alive ? (s.status === "idle" ? "alive" : "busy") : "");
+    $("asleep").hidden = !!s.alive;
+    if (pendingSince !== null && s.answer_ts && s.answer_ts > pendingSince) pendingSince = null;
+    $("thinking").hidden = pendingSince === null;
+    var h = $("history"); h.innerHTML = "";
+    (s.history || []).slice(-8).forEach(function (t) {
+      var you = document.createElement("div"); you.className = "you"; you.textContent = "You: " + t.text; h.appendChild(you);
+      if (t.answer) { var z = document.createElement("div"); z.className = "zero"; z.textContent = t.answer; h.appendChild(z); }
+    });
+    if (!(s.history || []).length && s.answer && s.answer.text) {
+      var z2 = document.createElement("div"); z2.className = "zero"; z2.textContent = s.answer.text; h.appendChild(z2);
+    }
+  }
+
+  function poll() {
+    if (!token) return;
+    api("/v1/presence").then(function (s) { $("err").hidden = true; render(s); })
+      .catch(function (e) {
+        if (/paired/.test(e.message)) { forget(); return; }
+        setState("no link", ""); $("line").textContent = "Can't reach your Mac right now. What I know is still safe there.";
+      });
+  }
+  function start() { show(!!token); poll(); clearInterval(timer); timer = setInterval(poll, pendingSince === null ? 5000 : 1500); }
+  function forget() { token = null; try { localStorage.removeItem("her_token"); } catch (e) {} show(false); setState("not paired", ""); }
+
+  $("pairForm").addEventListener("submit", function (ev) {
+    ev.preventDefault(); $("pairErr").hidden = true;
+    var name = (navigator.userAgent.match(/\(([^)]+)\)/) || [])[1] || "phone";
+    api("/pair", { code: $("code").value.trim().toUpperCase(), name: name.slice(0, 40), kind: "phone" })
+      .then(function (r) { token = r.token; try { localStorage.setItem("her_token", token); } catch (e) {} $("code").value = ""; start(); })
+      .catch(function (e) { $("pairErr").textContent = e.message; $("pairErr").hidden = false; });
+  });
+  function say(text, replyTo) {
+    if (!text) return;
+    $("err").hidden = true;
+    api("/v1/say", replyTo ? { text: text, reply_to: replyTo } : { text: text })
+      .then(function () { pendingSince = Date.now() / 1000; $("thinking").hidden = false; start(); })
+      .catch(function (e) { $("err").textContent = e.message; $("err").hidden = false; });
+  }
+  $("answerForm").addEventListener("submit", function (ev) { ev.preventDefault(); say($("answer").value.trim(), question && question.id); $("answer").value = ""; });
+  $("skip").addEventListener("click", function () { if (question) say("skip", question.id); });
+  $("askForm").addEventListener("submit", function (ev) { ev.preventDefault(); say($("askText").value.trim(), null); $("askText").value = ""; });
+  $("forget").addEventListener("click", forget);
+  start();
+})();
+</script>
