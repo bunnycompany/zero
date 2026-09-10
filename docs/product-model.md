@@ -174,3 +174,16 @@ personality it did not have, and this would be the same lie wearing a pricing pa
 The only thing already built is the lock the last note argued for — remote commands
 capped at `approve` — because that invariant has to exist before any of this ships,
 whatever the model above.
+
+## Addendum, 2026-09-10 — hosting is not 0.computer's job
+
+Founder decision, recorded as stated: **people will not host content on
+0.computer domains.** The earlier idea of letting anyone put pages or
+artifacts on a `*.0.computer` subdomain is withdrawn; hosting of that kind is
+what `spell.host` does (see `docs/ontology.md`, "The publishing side").
+
+What this note assumes, until the founder says otherwise: the identity layer
+above is unchanged. `you.0.computer` remains a nameplate and a doorbell (a
+passkey origin and a rendezvous for your own devices), never a house. That
+was already the rule ("identity is not hosting"); this addendum only removes
+the one thing that would have blurred it.
