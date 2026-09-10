@@ -175,15 +175,14 @@ The only thing already built is the lock the last note argued for — remote com
 capped at `approve` — because that invariant has to exist before any of this ships,
 whatever the model above.
 
-## Addendum, 2026-09-10 — hosting is not 0.computer's job
+## Addendum, 2026-09-10 — a hosting-specific domain exists
 
-Founder decision, recorded as stated: **people will not host content on
-0.computer domains.** The earlier idea of letting anyone put pages or
-artifacts on a `*.0.computer` subdomain is withdrawn; hosting of that kind is
-what `spell.host` does (see `docs/ontology.md`, "The publishing side").
+Founder note, recorded as stated: hosting on `0.computer` domains is still
+planned; what changed is that there is now a **dedicated hosting domain,
+`spell.host`** (see `docs/ontology.md`, "The publishing side"), so hosting
+of pages and artifacts no longer has to ride on `0.computer` to exist.
 
-What this note assumes, until the founder says otherwise: the identity layer
-above is unchanged. `you.0.computer` remains a nameplate and a doorbell (a
-passkey origin and a rendezvous for your own devices), never a house. That
-was already the rule ("identity is not hosting"); this addendum only removes
-the one thing that would have blurred it.
+The three-layer rule above is unchanged. `you.0.computer` remains identity
+first: a passkey origin and a rendezvous for your own devices. Anything
+hosted under `0.computer` is a product choice layered on that, not a
+requirement of it, and `spell.host` is where general hosting lives.
